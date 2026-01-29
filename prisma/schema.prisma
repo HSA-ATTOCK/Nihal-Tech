@@ -1,0 +1,267 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String          @id @default(uuid())
+  name              String?
+  email             String          @unique
+  password          String
+  role              Role            @default(CLIENT)
+  verified          Boolean         @default(false)
+  verificationToken String?
+  resetToken        String?
+  phone             String?         @default("")
+  address           String?         @default("")
+  orders            Order[]
+  orderComments     OrderComment[]
+  repairs           RepairBooking[]
+  cartItems         CartItem[]
+  addresses         Address[]
+  paymentMethods    PaymentMethod[]
+  returnRequests    ReturnRequest[]
+  reviews           Review[]
+  questions         ProductQuestion[]
+  answers           ProductAnswer[]
+  wishlist          WishlistItem[]
+  recentlyViewed    RecentlyViewed[]
+  comparisons       ProductComparison[]
+}
+
+model Product {
+  id          String @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  imageUrl    String
+  imageUrls   String[] @default([])
+  stock       Int
+  category    String   @default("New Phones")
+  variations  Json     @default("[]")
+  cartItems   CartItem[]
+  reviews     Review[]
+  questions   ProductQuestion[]
+  wishlist    WishlistItem[]
+  recentlyViewed RecentlyViewed[]
+}
+
+model RepairBooking {
+  id         String   @id @default(uuid())
+  userId     String
+  phoneModel String
+  issue      String
+  date       DateTime
+  createdAt  DateTime @default(now())
+  status     String   @default("Pending")
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Order {
+  id        String   @id @default(uuid())
+  userId    String
+  total     Float
+  phone     String   @default("")
+  shippingAddress String @default("")
+  shippingName    String @default("")
+  shippingEmail   String @default("")
+  items     Json     @default("[]")
+  status    String   @default("pending")
+  deliveredAt DateTime?
+  createdAt DateTime @default(now())
+  comments  OrderComment[]
+  user      User     @relation(fields: [userId], references: [id])
+  invoice   Invoice?
+  returns   ReturnRequest[]
+}
+
+model OrderComment {
+  id        String   @id @default(uuid())
+  orderId   String
+  userId    String?
+  authorRole Role
+  message   String
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+  user  User? @relation(fields: [userId], references: [id])
+}
+
+model Address {
+  id        String   @id @default(uuid())
+  userId    String
+  label     String   @default("Primary")
+  name      String
+  phone     String
+  line1     String
+  line2     String?
+  city      String
+  postCode  String
+  country   String   @default("UK")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isDefault])
+}
+
+model PaymentMethod {
+  id                     String   @id @default(uuid())
+  userId                 String
+  nameOnCard             String?
+  brand                  String?
+  last4                  String?
+  cardNumber             String?
+  cvv                    String?
+  expMonth               Int?
+  expYear                Int?
+  provider               String? // e.g., stripe
+  providerPaymentMethodId String?
+  providerCustomerId     String?
+  createdAt              DateTime @default(now())
+  isDefault              Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Invoice {
+  id        String   @id @default(uuid())
+  orderId   String   @unique
+  number    String
+  url       String
+  issuedAt  DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+}
+
+model ReturnRequest {
+  id        String   @id @default(uuid())
+  orderId   String
+  userId    String
+  status    String   @default("pending") // pending, approved, declined, received, refunded
+  reason    String
+  notes     String?
+  rmaNumber String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([orderId])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  rating    Int
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+  @@index([productId])
+}
+
+model ProductQuestion {
+  id        String   @id @default(uuid())
+  productId String
+  userId    String
+  question  String
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  answers ProductAnswer[]
+
+  @@index([productId])
+}
+
+model ProductAnswer {
+  id         String   @id @default(uuid())
+  questionId String
+  userId     String?
+  body       String
+  createdAt  DateTime @default(now())
+
+  question ProductQuestion @relation(fields: [questionId], references: [id])
+  user     User?           @relation(fields: [userId], references: [id])
+
+  @@index([questionId])
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+model RecentlyViewed {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  viewedAt  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+  @@index([viewedAt])
+}
+
+model ProductComparison {
+  id         String   @id @default(uuid())
+  userId     String
+  productIds Json     @default("[]")
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Bundle {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  items        Json     @default("[]") // [{ productId, quantity }]
+  priceOverride Float?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  quantity  Int      @default(1)
+  selectedVariations Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  CLIENT
+}
