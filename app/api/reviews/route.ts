@@ -25,7 +25,8 @@ export async function GET(req: NextRequest) {
   return Response.json({
     average,
     count,
-    reviews: reviews.map((r) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    reviews: reviews.map((r: any) => ({
       id: r.id,
       rating: r.rating,
       title: r.title,

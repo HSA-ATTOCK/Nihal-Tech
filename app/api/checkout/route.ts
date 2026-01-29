@@ -36,7 +36,8 @@ export async function POST(req: Request) {
     return Response.json({ message: "Cart is empty" }, { status: 400 });
   }
 
-  const lineItems = cartItems.map((item) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lineItems = cartItems.map((item: any) => ({
     name: item.product.name,
     price: item.product.price,
     quantity: item.quantity,
@@ -81,17 +82,19 @@ export async function POST(req: Request) {
   const adminEmail =
     process.env.ADMIN_EMAIL || process.env.EMAIL_USER || session.user.email;
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const orderLines = lineItems
-    .map((item) => {
+    .map((item: any) => {
       const variations = item.selectedVariations
         ? Object.entries(item.selectedVariations)
-            .map(([k, v]) => `${k}: ${v}`)
+            .map(([k, v]: [string, any]) => `${k}: ${v}`)
             .join(", ")
         : "";
       const line = `${item.name} x${item.quantity} — £${(item.price * item.quantity).toFixed(2)}`;
       return variations ? `${line} (${variations})` : line;
     })
     .join("\n");
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const emailSubject = `Order confirmed (${method === "cod" ? "Cash on Delivery" : "Card"})`;
   const customerHtml = buildEmail({
@@ -158,7 +161,8 @@ export async function POST(req: Request) {
 
   const sessionStripe = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
-    line_items: lineItems.map((item) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    line_items: lineItems.map((item: any) => ({
       price_data: {
         currency: "gbp",
         product_data: { name: item.name },

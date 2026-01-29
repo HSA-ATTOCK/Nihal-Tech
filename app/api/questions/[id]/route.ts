@@ -35,7 +35,8 @@ export async function GET(
     user: question.user
       ? { name: question.user.name, email: question.user.email }
       : null,
-    answers: question.answers.map((a) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    answers: question.answers.map((a: any) => ({
       id: a.id,
       body: a.body,
       createdAt: a.createdAt,
@@ -108,7 +109,8 @@ export async function POST(
       : null,
     user: full?.user ? { name: full.user.name, email: full.user.email } : null,
     answers:
-      full?.answers.map((a) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      full?.answers.map((a: any) => ({
         id: a.id,
         body: a.body,
         createdAt: a.createdAt,

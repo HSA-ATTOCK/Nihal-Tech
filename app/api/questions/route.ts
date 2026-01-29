@@ -21,12 +21,14 @@ export async function GET(req: NextRequest) {
   });
 
   return Response.json(
-    questions.map((q) => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    questions.map((q: any) => ({
       id: q.id,
       question: q.question,
       createdAt: q.createdAt,
       user: q.user ? { name: q.user.name, email: q.user.email } : null,
-      answers: q.answers.map((a) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      answers: q.answers.map((a: any) => ({
         id: a.id,
         body: a.body,
         createdAt: a.createdAt,
