@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   const products = await prisma.product.findMany({
     where: { id: { in: Array.from(productIds) } },
   });
-  const productMap = new Map(products.map((p) => [p.id, p]));
+  const productMap = new Map(products.map((p: { id: string }) => [p.id, p]));
 
   const withProducts = filtered.map((b: { items?: unknown }) => {
     const items = Array.isArray(b.items)

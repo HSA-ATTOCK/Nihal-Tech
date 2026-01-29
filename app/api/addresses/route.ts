@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   const hasAny = await prisma.address.count({ where: { userId: user.id } });
   const shouldBeDefault = Boolean(isDefault || !hasAny);
 
-  const created = await prisma.$transaction(async (tx: typeof prisma) => {
+  const created = await prisma.$transaction(async (tx) => {
     if (shouldBeDefault) {
       await tx.address.updateMany({
         where: { userId: user.id, isDefault: true },
