@@ -88,7 +88,7 @@ export default async function AdminOrderDetail({
             user: order.user
               ? { email: order.user.email, name: order.user.name }
               : null,
-            returns: order.returns.map((r) => ({
+            returns: order.returns.map((r: any) => ({
               id: r.id,
               status: r.status,
               reason: r.reason,
