@@ -1,6 +1,5 @@
 ﻿"use client";
 
-
 export interface OrderComment {
   id: string;
   message: string;
@@ -22,7 +21,6 @@ export interface OrderItem {
 }
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-
 
 export type ReturnRequest = {
   id: string;
@@ -51,7 +49,6 @@ export interface OrderDetail {
   isOwner?: boolean;
 }
 
-
 type ReviewDraft = {
   rating: number;
   review: string;
@@ -68,7 +65,9 @@ export default function OrderDetailClient({
 }) {
   const isOwner = ownerOverride ?? order.isOwner ?? true;
   const isDelivered = order.status.toLowerCase() === "delivered";
-  const [reviewDrafts, setReviewDrafts] = useState<Record<string, ReviewDraft>>({});
+  const [reviewDrafts, setReviewDrafts] = useState<Record<string, ReviewDraft>>(
+    {},
+  );
   const [returnSubmitting, setReturnSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [returnForm, setReturnForm] = useState({ reason: "", notes: "" });
