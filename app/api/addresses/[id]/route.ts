@@ -66,7 +66,8 @@ export async function PUT(
 
   const shouldBeDefault = Boolean(isDefault);
 
-  const updated = await prisma.$transaction(async (tx) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updated = await prisma.$transaction(async (tx: any) => {
     if (shouldBeDefault) {
       await tx.address.updateMany({
         where: { userId: user.id, isDefault: true },

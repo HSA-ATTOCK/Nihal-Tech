@@ -26,7 +26,8 @@ export async function PUT(
   const body = await req.json().catch(() => ({}));
   const { isDefault } = body as { isDefault?: boolean };
 
-  const updated = await prisma.$transaction(async (tx) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updated = await prisma.$transaction(async (tx: any) => {
     if (isDefault) {
       await tx.paymentMethod.updateMany({
         where: { userId: user.id, isDefault: true },

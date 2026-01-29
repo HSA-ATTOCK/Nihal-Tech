@@ -65,7 +65,8 @@ export async function POST(req: NextRequest) {
   });
   const shouldDefault = Boolean(isDefault || count === 0);
 
-  const created = await prisma.$transaction(async (tx) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const created = await prisma.$transaction(async (tx: any) => {
     if (shouldDefault) {
       await tx.paymentMethod.updateMany({
         where: { userId: user.id, isDefault: true },

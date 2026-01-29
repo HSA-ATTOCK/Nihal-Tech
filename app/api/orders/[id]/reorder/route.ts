@@ -36,7 +36,8 @@ export async function POST(
     ? (order.items as OrderItem[])
     : [];
 
-  await prisma.$transaction(async (tx) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await prisma.$transaction(async (tx: any) => {
     for (const item of items) {
       if (!item.productId) continue;
       const product = await tx.product.findUnique({
