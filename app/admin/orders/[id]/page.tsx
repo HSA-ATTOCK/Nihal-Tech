@@ -78,7 +78,7 @@ export default async function AdminOrderDetail({
             shippingAddress: order.shippingAddress,
             items,
             createdAt: order.createdAt.toISOString(),
-            comments: order.comments.map((c: any) => ({
+            comments: order.comments.map((c) => ({
               id: c.id,
               message: c.message,
               createdAt: c.createdAt.toISOString(),
@@ -88,7 +88,7 @@ export default async function AdminOrderDetail({
             user: order.user
               ? { email: order.user.email, name: order.user.name }
               : null,
-            returns: order.returns.map((r: any) => ({
+            returns: order.returns.map((r) => ({
               id: r.id,
               status: r.status,
               reason: r.reason,

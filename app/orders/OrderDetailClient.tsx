@@ -20,7 +20,7 @@ export interface OrderItem {
   };
 }
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 export type ReturnRequest = {
   id: string;
@@ -81,7 +81,7 @@ export default function OrderDetailClient({
     if (!order.deliveredAt) return false;
     const deliveredTime = new Date(order.deliveredAt).getTime();
     if (Number.isNaN(deliveredTime)) return false;
-    const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+    // const threeDaysMs = 3 * 24 * 60 * 60 * 1000; // unused
     const seeded: Record<string, ReviewDraft> = {};
     order.items.forEach((item) => {
       if (!item.productId || !item.userReview) return;
@@ -95,7 +95,7 @@ export default function OrderDetailClient({
     if (Object.keys(seeded).length > 0) {
       setReviewDrafts((prev) => ({ ...seeded, ...prev }));
     }
-  }, [order.items]);
+  }, [order.items, order.deliveredAt]);
 
   const submitReturn = async () => {
     setReturnSubmitting(true);
