@@ -78,7 +78,7 @@ export default async function AdminOrderDetail({
             shippingAddress: order.shippingAddress,
             items,
             createdAt: order.createdAt.toISOString(),
-            comments: order.comments.map((c) => ({
+            comments: order.comments.map((c: any) => ({
               id: c.id,
               message: c.message,
               createdAt: c.createdAt.toISOString(),
