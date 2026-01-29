@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import { getServerSession } from "next-auth";
 import { NextRequest } from "next/server";
@@ -67,31 +66,29 @@ export async function PUT(
 
   const shouldBeDefault = Boolean(isDefault);
 
-  const updated = await prisma.$transaction(
-    async (tx: Prisma.TransactionClient) => {
-      if (shouldBeDefault) {
-        await tx.address.updateMany({
-          where: { userId: user.id, isDefault: true },
-          data: { isDefault: false },
-        });
-      }
-
-      return tx.address.update({
-        where: { id: existing.id },
-        data: {
-          label: label ?? existing.label,
-          name: name ?? existing.name,
-          phone: phone ?? existing.phone,
-          line1: line1 ?? existing.line1,
-          line2: line2 ?? existing.line2,
-          city: city ?? existing.city,
-          postCode: postCode ?? existing.postCode,
-          country: country ?? existing.country,
-          isDefault: shouldBeDefault ? true : existing.isDefault,
-        },
+  const updated = await prisma.$transaction(async (tx) => {
+    if (shouldBeDefault) {
+      await tx.address.updateMany({
+        where: { userId: user.id, isDefault: true },
+        data: { isDefault: false },
       });
-    },
-  );
+    }
+
+    return tx.address.update({
+      where: { id: existing.id },
+      data: {
+        label: label ?? existing.label,
+        name: name ?? existing.name,
+        phone: phone ?? existing.phone,
+        line1: line1 ?? existing.line1,
+        line2: line2 ?? existing.line2,
+        city: city ?? existing.city,
+        postCode: postCode ?? existing.postCode,
+        country: country ?? existing.country,
+        isDefault: shouldBeDefault ? true : existing.isDefault,
+      },
+    });
+  });
 
   return Response.json(updated);
 }
