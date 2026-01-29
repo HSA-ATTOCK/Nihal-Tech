@@ -28,7 +28,12 @@ export default async function AdminOrders() {
         ) : (
           <div className="space-y-3">
             {orders.map(
-              (o: { id: string; user?: { email?: string | null } | null }) => (
+              (o: {
+                id: string;
+                user?: { email?: string | null } | null;
+                createdAt: Date | string;
+                status: string;
+              }) => (
                 <div
                   key={o.id}
                   className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
