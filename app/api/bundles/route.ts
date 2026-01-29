@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   });
 
   const filtered = productId
-    ? bundles.filter((b) => {
+    ? bundles.filter((b: { items?: unknown }) => {
         const items = Array.isArray(b.items)
           ? (b.items as Array<{ productId?: string }>)
           : [];
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     : bundles;
 
   const productIds = new Set<string>();
-  filtered.forEach((b) => {
+  filtered.forEach((b: { items?: unknown }) => {
     const items = Array.isArray(b.items)
       ? (b.items as Array<{ productId?: string }>)
       : [];
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   });
   const productMap = new Map(products.map((p) => [p.id, p]));
 
-  const withProducts = filtered.map((b) => {
+  const withProducts = filtered.map((b: { items?: unknown }) => {
     const items = Array.isArray(b.items)
       ? (b.items as Array<{ productId?: string; quantity?: number }>)
       : [];
