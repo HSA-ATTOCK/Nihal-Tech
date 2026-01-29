@@ -73,15 +73,15 @@ export async function PUT(req: Request) {
     ? body.keepImageUrls.filter(Boolean)
     : undefined;
 
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const uploads = images.length
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await Promise.all(
+    ? await Promise.all(
         images.map((img: any) => cloudinary.uploader.upload(img)),
       )
     : [];
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const uploadedUrls = uploads.map((u: any) => u.secure_url);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const nextImageUrls = keepImageUrls ?? existing.imageUrls ?? [];
   const mergedImageUrls = [...nextImageUrls, ...uploadedUrls];
