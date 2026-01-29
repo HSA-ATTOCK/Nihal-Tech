@@ -190,7 +190,7 @@ export default function Cart() {
                         Qty: {item.quantity}
                       </p>
                     </div>
-                    <div className="text-right space-y-3 min-w-[120px]">
+                    <div className="text-right space-y-3 min-w-30">
                       <p className="text-slate-900 font-semibold text-lg">
                         £{(item.product.price * item.quantity).toFixed(2)}
                       </p>

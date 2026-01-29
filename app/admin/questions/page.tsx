@@ -13,19 +13,44 @@ export default async function AdminQuestionsPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  const mapped: AdminQuestion[] = questions.map((q) => ({
-    id: q.id,
-    question: q.question,
-    createdAt: q.createdAt.toISOString(),
-    product: q.product ? { id: q.product.id, name: q.product.name } : null,
-    user: q.user ? { name: q.user.name, email: q.user.email } : null,
-    answers: q.answers.map((a) => ({
-      id: a.id,
-      body: a.body,
-      createdAt: a.createdAt.toISOString(),
-      user: a.user ? { name: a.user.name, email: a.user.email } : null,
-    })),
-  }));
+  const mapped: AdminQuestion[] = questions.map(
+    (q: {
+      id: string;
+      question: string;
+      createdAt: Date;
+      product?: { id: string; name: string } | null;
+      user: { name: string | null; email: string | null } | null;
+      answers: Array<{
+        id: string;
+        body: string;
+        createdAt: Date;
+        user: { name: string | null; email: string | null } | null;
+      }>;
+    }) => ({
+      id: q.id,
+      question: q.question,
+      createdAt: q.createdAt.toISOString(),
+      product: q.product ? { id: q.product.id, name: q.product.name } : null,
+      user: q.user
+        ? { name: q.user.name ?? null, email: q.user.email ?? null }
+        : null,
+      answers: q.answers.map(
+        (a: {
+          id: string;
+          body: string;
+          createdAt: Date;
+          user: { name: string | null; email: string | null } | null;
+        }) => ({
+          id: a.id,
+          body: a.body,
+          createdAt: a.createdAt.toISOString(),
+          user: a.user
+            ? { name: a.user.name ?? null, email: a.user.email ?? null }
+            : null,
+        }),
+      ),
+    }),
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4">

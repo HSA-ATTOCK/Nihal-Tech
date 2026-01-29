@@ -274,7 +274,7 @@ export default function PaymentMethodsPage() {
                   onChange={(e) =>
                     setPaymentForm({ ...paymentForm, expMonth: e.target.value })
                   }
-                  className="w-[120px] sm:w-24"
+                  className="w-30 sm:w-24"
                 />
                 <Input
                   placeholder="Exp year"
@@ -282,7 +282,7 @@ export default function PaymentMethodsPage() {
                   onChange={(e) =>
                     setPaymentForm({ ...paymentForm, expYear: e.target.value })
                   }
-                  className="w-[120px] sm:w-24"
+                  className="w-30 sm:w-24"
                 />
               </div>
             </div>
