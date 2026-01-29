@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../api/auth/[...nextauth]/route";
 import AdminOrderDetailClient from "../AdminOrderDetailClient";
@@ -28,7 +27,7 @@ export default async function AdminOrderDetail({
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
   });
-  if (!user || user.role !== Role.ADMIN) {
+  if (!user || user.role !== "ADMIN") {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="bg-white border border-slate-200 rounded-3xl p-10 text-center text-slate-700 shadow-sm max-w-md w-full">
