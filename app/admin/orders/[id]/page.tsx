@@ -62,7 +62,7 @@ export default async function AdminOrderDetail({
   }
 
   const items: OrderItem[] = Array.isArray(order.items)
-    ? (order.items as OrderItem[])
+    ? (order.items as unknown as OrderItem[])
     : [];
 
   return (

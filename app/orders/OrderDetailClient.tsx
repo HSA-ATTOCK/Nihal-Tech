@@ -1,30 +1,28 @@
 ﻿"use client";
 
-import { Role } from "@prisma/client";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
 
-export type OrderItem = {
-  name: string;
-  quantity: number;
-  price?: number | null;
-  selectedVariations?: Record<string, string> | null;
-  productId?: string | null;
-  userReview?: {
-    rating: number;
-    review: string;
-    title?: string | null;
-    createdAt?: string | null;
-  } | null;
-};
-
-export type OrderComment = {
+export interface OrderComment {
   id: string;
   message: string;
   createdAt: string;
-  createdByRole: Role;
+  createdByRole: string;
   createdByEmail?: string | null;
-};
+}
+
+export interface OrderItem {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number;
+  selectedVariations?: Record<string, string>;
+  userReview?: {
+    rating: number;
+    review: string;
+  };
+}
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+
 
 export type ReturnRequest = {
   id: string;
@@ -35,7 +33,7 @@ export type ReturnRequest = {
   createdAt: string;
 };
 
-export type OrderDetail = {
+export interface OrderDetail {
   id: string;
   total: number;
   status: string;
@@ -51,7 +49,8 @@ export type OrderDetail = {
   invoiceNumber?: string | null;
   isDelivered?: boolean;
   isOwner?: boolean;
-};
+}
+
 
 type ReviewDraft = {
   rating: number;
@@ -69,6 +68,11 @@ export default function OrderDetailClient({
 }) {
   const isOwner = ownerOverride ?? order.isOwner ?? true;
   const isDelivered = order.status.toLowerCase() === "delivered";
+  const [reviewDrafts, setReviewDrafts] = useState<Record<string, ReviewDraft>>({});
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [returnForm, setReturnForm] = useState({ reason: "", notes: "" });
+  const [returns, setReturns] = useState<ReturnRequest[]>(order.returns ?? []);
   const formatDate = (input?: string | null) =>
     input
       ? new Date(input).toLocaleString("en-GB", { timeZone: "Europe/London" })
@@ -79,17 +83,6 @@ export default function OrderDetailClient({
     const deliveredTime = new Date(order.deliveredAt).getTime();
     if (Number.isNaN(deliveredTime)) return false;
     const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
-    return Date.now() - deliveredTime <= threeDaysMs;
-  }, [order.deliveredAt]);
-  const [message, setMessage] = useState<string | null>(null);
-  const [returnForm, setReturnForm] = useState({ reason: "", notes: "" });
-  const [returns, setReturns] = useState<ReturnRequest[]>(order.returns || []);
-  const [returnSubmitting, setReturnSubmitting] = useState(false);
-  const [reviewDrafts, setReviewDrafts] = useState<Record<string, ReviewDraft>>(
-    {},
-  );
-
-  useEffect(() => {
     const seeded: Record<string, ReviewDraft> = {};
     order.items.forEach((item) => {
       if (!item.productId || !item.userReview) return;

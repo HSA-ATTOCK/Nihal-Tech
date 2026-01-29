@@ -78,7 +78,7 @@ export default async function OrderDetail({
   }
 
   const items: OrderItem[] = Array.isArray(order.items)
-    ? (order.items as OrderItem[])
+    ? (order.items as unknown as OrderItem[])
     : [];
 
   const productIds = items.map((i) => i.productId).filter(Boolean) as string[];

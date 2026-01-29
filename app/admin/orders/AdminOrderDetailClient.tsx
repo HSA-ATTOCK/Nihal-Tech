@@ -1,5 +1,5 @@
 "use client";
-import { Role } from "@prisma/client";
+// Use string for role in client components to avoid enum conflicts
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import type {
@@ -38,8 +38,9 @@ export default function AdminOrderDetailClient({
 }: {
   order: AdminOrderDetail;
 }) {
-  type ApiOrderComment = OrderComment & {
-    authorRole?: Role;
+  type ApiOrderComment = Omit<OrderComment, "createdByRole"> & {
+    createdByRole?: string;
+    authorRole?: string;
     user?: { email?: string | null } | null;
   };
 
@@ -72,7 +73,7 @@ export default function AdminOrderDetailClient({
         (json.comments as ApiOrderComment[] | undefined) ?? [];
       const normalized = incomingComments.map((c) => ({
         ...c,
-        createdByRole: c.createdByRole ?? c.authorRole ?? Role.ADMIN,
+        createdByRole: c.createdByRole ?? c.authorRole ?? "ADMIN",
         createdByEmail: c.createdByEmail ?? c.user?.email ?? null,
       }));
       setComments(normalized.length ? normalized : comments);
@@ -301,7 +302,7 @@ export default function AdminOrderDetailClient({
                   >
                     <div className="flex justify-between text-xs text-slate-500">
                       <span>
-                        {c.createdByRole === Role.ADMIN ? "Admin" : "Client"}
+                        {c.createdByRole === "ADMIN" ? "Admin" : "Client"}
                       </span>
                       <span>{new Date(c.createdAt).toLocaleString()}</span>
                     </div>
