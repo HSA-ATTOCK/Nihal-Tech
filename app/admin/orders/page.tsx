@@ -33,6 +33,7 @@ export default async function AdminOrders() {
                 user?: { email?: string | null } | null;
                 createdAt: Date | string;
                 status: string;
+                total: number;
               }) => (
                 <div
                   key={o.id}
