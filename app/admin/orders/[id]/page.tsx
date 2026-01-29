@@ -96,14 +96,23 @@ export default async function AdminOrderDetail({
             user: order.user
               ? { email: order.user.email, name: order.user.name }
               : null,
-            returns: order.returns.map((r) => ({
-              id: r.id,
-              status: r.status,
-              reason: r.reason,
-              notes: r.notes,
-              rmaNumber: r.rmaNumber,
-              createdAt: r.createdAt.toISOString(),
-            })),
+            returns: order.returns.map(
+              (r: {
+                id: string;
+                status: string;
+                reason: string;
+                notes?: string | null;
+                rmaNumber: string;
+                createdAt: Date;
+              }) => ({
+                id: r.id,
+                status: r.status,
+                reason: r.reason,
+                notes: r.notes,
+                rmaNumber: r.rmaNumber,
+                createdAt: r.createdAt.toISOString(),
+              }),
+            ),
           }}
         />
       </div>
