@@ -44,10 +44,13 @@ export default function Footer() {
             <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.15em]">
               Quick links
             </p>
-            <ul className="space-y-2 text-slate-700">
+            <ul className="space-y-2 text-[#1f4b99]">
               {quickLinks.map((item) => (
                 <li key={item.label}>
-                  <Link className="hover:text-slate-900" href={item.href}>
+                  <Link
+                    className="text-[#1f4b99] hover:text-[#163a79] transition-colors"
+                    href={item.href}
+                  >
                     {item.label}
                   </Link>
                 </li>
@@ -59,10 +62,13 @@ export default function Footer() {
             <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.15em]">
               Support
             </p>
-            <ul className="space-y-2 text-slate-700">
+            <ul className="space-y-2 text-[#1f4b99]">
               {supportLinks.map((item) => (
                 <li key={item.label}>
-                  <Link className="hover:text-slate-900" href={item.href}>
+                  <Link
+                    className="text-[#1f4b99] hover:text-[#163a79] transition-colors"
+                    href={item.href}
+                  >
                     {item.label}
                   </Link>
                 </li>
@@ -74,10 +80,13 @@ export default function Footer() {
             <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.15em]">
               Legal
             </p>
-            <ul className="space-y-2 text-slate-700">
+            <ul className="space-y-2 text-[#1f4b99]">
               {legalLinks.map((item) => (
                 <li key={item.label}>
-                  <Link className="hover:text-slate-900" href={item.href}>
+                  <Link
+                    className="text-[#1f4b99] hover:text-[#163a79] transition-colors"
+                    href={item.href}
+                  >
                     {item.label}
                   </Link>
                 </li>
