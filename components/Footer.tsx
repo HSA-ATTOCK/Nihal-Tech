@@ -24,7 +24,7 @@ export default function Footer() {
   return (
     <footer className="mt-16 border-t border-slate-200 bg-white/90 backdrop-blur">
       <Container>
-        <div className="py-12 grid gap-10 lg:grid-cols-[1.2fr_1fr_1fr_1fr]">
+        <div className="py-8 sm:py-12 grid gap-8 sm:gap-10 lg:grid-cols-[1.2fr_1fr_1fr_1fr] text-center lg:text-left">
           <div className="space-y-4">
             <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.15em]">
               Nihal Tech
@@ -86,12 +86,12 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 pb-10 text-sm text-slate-500">
+        <div className="flex flex-col gap-3 pb-8 sm:pb-10 text-sm text-slate-500 text-center">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <p>© {new Date().getFullYear()} Nihal Tech. All rights reserved.</p>
             <p>Response hours: Mon-Fri, 9:00–17:00 UK time</p>
           </div>
-          <div className="border-t border-slate-200 pt-3 flex justify-center">
+          <div className="border-t border-slate-200 pt-3">
             <p>
               Developed by{" "}
               <a
