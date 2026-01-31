@@ -186,6 +186,7 @@ export type EditableProduct = {
   price: number;
   stock: number;
   category?: string | null;
+  brand?: string | null;
   description?: string | null;
   variations?: Array<{ name: string; options?: string[] | null }> | null;
   imageUrls?: string[] | null;
@@ -200,6 +201,7 @@ export default function EditProductClient({
   const [price, setPrice] = useState(String(product.price ?? ""));
   const [stock, setStock] = useState(String(product.stock ?? ""));
   const [category, setCategory] = useState(product.category || categories[0]);
+  const [brand, setBrand] = useState(product.brand || "");
   const [description, setDescription] = useState(product.description || "");
   const [variations, setVariations] = useState<VariationInput[]>(
     product.variations?.length
@@ -269,6 +271,7 @@ export default function EditProductClient({
         price: Number(price),
         stock: Number(stock),
         category,
+        brand: brand.trim(),
         description: description.trim(),
         variations: variations
           .filter((variation) => variation.name.trim())
@@ -345,6 +348,12 @@ export default function EditProductClient({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Product name"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
+        />
+        <input
+          value={brand}
+          onChange={(e) => setBrand(e.target.value)}
+          placeholder="Brand name (optional)"
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
         />
         <input

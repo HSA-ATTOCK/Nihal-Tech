@@ -7,46 +7,47 @@ datasource db {
 }
 
 model User {
-  id                String          @id @default(uuid())
+  id                String              @id @default(uuid())
   name              String?
-  email             String          @unique
+  email             String              @unique
   password          String
-  role              Role            @default(CLIENT)
-  verified          Boolean         @default(false)
+  role              Role                @default(CLIENT)
+  verified          Boolean             @default(false)
   verificationToken String?
   resetToken        String?
-  phone             String?         @default("")
-  address           String?         @default("")
+  address           String?             @default("")
+  phone             String?             @default("")
+  addresses         Address[]
+  cartItems         CartItem[]
   orders            Order[]
   orderComments     OrderComment[]
-  repairs           RepairBooking[]
-  cartItems         CartItem[]
-  addresses         Address[]
   paymentMethods    PaymentMethod[]
+  answers           ProductAnswer[]
+  comparisons       ProductComparison[]
+  questions         ProductQuestion[]
+  recentlyViewed    RecentlyViewed[]
+  repairs           RepairBooking[]
   returnRequests    ReturnRequest[]
   reviews           Review[]
-  questions         ProductQuestion[]
-  answers           ProductAnswer[]
   wishlist          WishlistItem[]
-  recentlyViewed    RecentlyViewed[]
-  comparisons       ProductComparison[]
 }
 
 model Product {
-  id          String @id @default(uuid())
-  name        String
-  description String
-  price       Float
-  imageUrl    String
-  imageUrls   String[] @default([])
-  stock       Int
-  category    String   @default("New Phones")
-  variations  Json     @default("[]")
-  cartItems   CartItem[]
-  reviews     Review[]
-  questions   ProductQuestion[]
-  wishlist    WishlistItem[]
+  id             String            @id @default(uuid())
+  name           String
+  description    String
+  price          Float
+  imageUrl       String
+  stock          Int
+  imageUrls      String[]          @default([])
+  category       String            @default("New Phones")
+  variations     Json              @default("[]")
+  brand          String?           @default("")
+  cartItems      CartItem[]
+  questions      ProductQuestion[]
   recentlyViewed RecentlyViewed[]
+  reviews        Review[]
+  wishlist       WishlistItem[]
 }
 
 model RepairBooking {
@@ -55,39 +56,38 @@ model RepairBooking {
   phoneModel String
   issue      String
   date       DateTime
-  createdAt  DateTime @default(now())
   status     String   @default("Pending")
+  createdAt  DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id])
 }
 
 model Order {
-  id        String   @id @default(uuid())
-  userId    String
-  total     Float
-  phone     String   @default("")
-  shippingAddress String @default("")
-  shippingName    String @default("")
-  shippingEmail   String @default("")
-  items     Json     @default("[]")
-  status    String   @default("pending")
-  deliveredAt DateTime?
-  createdAt DateTime @default(now())
-  comments  OrderComment[]
-  user      User     @relation(fields: [userId], references: [id])
-  invoice   Invoice?
-  returns   ReturnRequest[]
+  id              String          @id @default(uuid())
+  userId          String
+  total           Float
+  createdAt       DateTime        @default(now())
+  phone           String          @default("")
+  shippingAddress String          @default("")
+  items           Json            @default("[]")
+  shippingEmail   String          @default("")
+  shippingName    String          @default("")
+  status          String          @default("pending")
+  deliveredAt     DateTime?
+  invoice         Invoice?
+  user            User            @relation(fields: [userId], references: [id])
+  comments        OrderComment[]
+  returns         ReturnRequest[]
 }
 
 model OrderComment {
-  id        String   @id @default(uuid())
-  orderId   String
-  userId    String?
+  id         String   @id @default(uuid())
+  orderId    String
+  userId     String?
   authorRole Role
-  message   String
-  createdAt DateTime @default(now())
-
-  order Order @relation(fields: [orderId], references: [id])
-  user  User? @relation(fields: [userId], references: [id])
+  message    String
+  createdAt  DateTime @default(now())
+  order      Order    @relation(fields: [orderId], references: [id])
+  user       User?    @relation(fields: [userId], references: [id])
 }
 
 model Address {
@@ -103,57 +103,53 @@ model Address {
   country   String   @default("UK")
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([isDefault])
 }
 
 model PaymentMethod {
-  id                     String   @id @default(uuid())
-  userId                 String
-  nameOnCard             String?
-  brand                  String?
-  last4                  String?
-  cardNumber             String?
-  cvv                    String?
-  expMonth               Int?
-  expYear                Int?
-  provider               String? // e.g., stripe
+  id                      String   @id @default(uuid())
+  userId                  String
+  brand                   String?
+  last4                   String?
+  expMonth                Int?
+  expYear                 Int?
+  provider                String?
   providerPaymentMethodId String?
-  providerCustomerId     String?
-  createdAt              DateTime @default(now())
-  isDefault              Boolean  @default(false)
-
-  user User @relation(fields: [userId], references: [id])
+  providerCustomerId      String?
+  createdAt               DateTime @default(now())
+  isDefault               Boolean  @default(false)
+  cardNumber              String?
+  cvv                     String?
+  nameOnCard              String?
+  user                    User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
 
 model Invoice {
-  id        String   @id @default(uuid())
-  orderId   String   @unique
-  number    String
-  url       String
-  issuedAt  DateTime @default(now())
-
-  order Order @relation(fields: [orderId], references: [id])
+  id       String   @id @default(uuid())
+  orderId  String   @unique
+  number   String
+  url      String
+  issuedAt DateTime @default(now())
+  order    Order    @relation(fields: [orderId], references: [id])
 }
 
 model ReturnRequest {
   id        String   @id @default(uuid())
   orderId   String
   userId    String
-  status    String   @default("pending") // pending, approved, declined, received, refunded
+  status    String   @default("pending")
   reason    String
   notes     String?
   rmaNumber String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  order Order @relation(fields: [orderId], references: [id])
-  user  User  @relation(fields: [userId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([orderId])
@@ -167,37 +163,34 @@ model Review {
   title     String
   body      String
   createdAt DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, productId])
   @@index([productId])
 }
 
 model ProductQuestion {
-  id        String   @id @default(uuid())
+  id        String          @id @default(uuid())
   productId String
   userId    String
   question  String
-  createdAt DateTime @default(now())
-
-  product Product @relation(fields: [productId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
-  answers ProductAnswer[]
+  createdAt DateTime        @default(now())
+  answers   ProductAnswer[]
+  product   Product         @relation(fields: [productId], references: [id])
+  user      User            @relation(fields: [userId], references: [id])
 
   @@index([productId])
 }
 
 model ProductAnswer {
-  id         String   @id @default(uuid())
+  id         String          @id @default(uuid())
   questionId String
   userId     String?
   body       String
-  createdAt  DateTime @default(now())
-
-  question ProductQuestion @relation(fields: [questionId], references: [id])
-  user     User?           @relation(fields: [userId], references: [id])
+  createdAt  DateTime        @default(now())
+  question   ProductQuestion @relation(fields: [questionId], references: [id])
+  user       User?           @relation(fields: [userId], references: [id])
 
   @@index([questionId])
 }
@@ -207,9 +200,8 @@ model WishlistItem {
   userId    String
   productId String
   createdAt DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, productId])
   @@index([userId])
@@ -220,9 +212,8 @@ model RecentlyViewed {
   userId    String
   productId String
   viewedAt  DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, productId])
   @@index([viewedAt])
@@ -233,33 +224,31 @@ model ProductComparison {
   userId     String
   productIds Json     @default("[]")
   createdAt  DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }
 
 model Bundle {
-  id           String   @id @default(uuid())
-  name         String
-  description  String?
-  items        Json     @default("[]") // [{ productId, quantity }]
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  items         Json     @default("[]")
   priceOverride Float?
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
 }
 
 model CartItem {
-  id        String   @id @default(uuid())
-  userId    String
-  productId String
-  quantity  Int      @default(1)
-  price     Float?
+  id                 String   @id @default(uuid())
+  userId             String
+  productId          String
+  quantity           Int      @default(1)
+  createdAt          DateTime @default(now())
   selectedVariations Json     @default("{}")
-  createdAt DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
+  price              Float?
+  product            Product  @relation(fields: [productId], references: [id])
+  user               User     @relation(fields: [userId], references: [id])
 }
 
 enum Role {

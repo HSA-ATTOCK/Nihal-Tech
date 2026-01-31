@@ -26,17 +26,23 @@ export default function Footer() {
       <Container>
         <div className="py-8 sm:py-12 grid gap-8 sm:gap-10 lg:grid-cols-[1.2fr_1fr_1fr_1fr] text-center lg:text-left">
           <div className="space-y-4">
-            <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.15em]">
-              Nihal Tech
-            </p>
+            <Link href="/" className="block">
+              <span className="inline-block group py-1 rounded transition-all">
+                <span className="block text-sm font-bold text-slate-900 uppercase tracking-[0.15em] group-hover:hidden">
+                  Nihal Tech
+                </span>
+                <span className="hidden text-sm font-bold text-[#1f4b99] uppercase tracking-[0.15em] group-hover:block">
+                  Nihal Tech
+                </span>
+              </span>
+            </Link>
             <p className="text-lg font-semibold text-slate-900">
               Trusted devices, repairs, and support for modern teams.
             </p>
             <div className="space-y-2 text-sm text-slate-700">
-              <p>Phone: +44 20 7123 4567</p>
-              <p>WhatsApp: +44 7700 900123</p>
-              <p>Email: support@nihaltech.com</p>
-              <p>Address: 221B Tech Street, London</p>
+              <p>WhatsApp: +44 7473 516168</p>
+              <p>Email: info@nihaltech.co.uk</p>
+              <p>Address: 179 North Lane Rushmoor Aldershot GUI24SY</p>
             </div>
           </div>
 

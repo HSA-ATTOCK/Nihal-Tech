@@ -16,6 +16,7 @@ interface Product {
   price: number;
   stock: number;
   category?: string;
+  brand?: string;
   imageUrl?: string;
   imageUrls?: string[];
   variations?: Array<{ name: string; options?: RawOption[] }>;
@@ -72,6 +73,7 @@ export default function ProductDetail() {
   const [inWishlist, setInWishlist] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
+  const [moreProducts, setMoreProducts] = useState<Product[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewSummary, setReviewSummary] = useState({ average: 0, count: 0 });
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -162,6 +164,19 @@ export default function ProductDetail() {
       })
       .catch(() => {});
   }, [status, product?.id]);
+
+  useEffect(() => {
+    if (!product) return;
+    fetch("/api/products")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: Product[]) => {
+        const filtered = (data || [])
+          .filter((p) => p.id !== product.id)
+          .slice(0, 8);
+        setMoreProducts(filtered);
+      })
+      .catch(() => {});
+  }, [product]);
 
   useEffect(() => {
     if (!product) return;
@@ -436,6 +451,40 @@ export default function ProductDetail() {
     dragStart.current = null;
   };
 
+  const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (lightboxZoom <= 1) return;
+    e.preventDefault();
+    dragMoved.current = false;
+    setIsDragging(true);
+    const t = e.touches[0];
+    dragStart.current = {
+      x: t.clientX,
+      y: t.clientY,
+      offsetX: lightboxOffset.x,
+      offsetY: lightboxOffset.y,
+    };
+  };
+
+  const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging || !dragStart.current) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const dx = (t.clientX - dragStart.current.x) * 1.2;
+    const dy = (t.clientY - dragStart.current.y) * 1.2;
+    if (Math.abs(dx) + Math.abs(dy) > 2) {
+      dragMoved.current = true;
+    }
+    setLightboxOffset({
+      x: clampOffset(dragStart.current.offsetX + dx, lightboxZoom),
+      y: clampOffset(dragStart.current.offsetY + dy, lightboxZoom),
+    });
+  };
+
+  const onTouchEnd = (e?: React.TouchEvent<HTMLDivElement>) => {
+    setIsDragging(false);
+    dragStart.current = null;
+  };
+
   const onLightboxClick = () => {
     if (isDragging || dragMoved.current) {
       dragMoved.current = false;
@@ -504,6 +553,11 @@ export default function ProductDetail() {
             <h1 className="text-3xl font-semibold text-slate-900">
               {product.name}
             </h1>
+            {product.brand && (
+              <p className="text-sm text-slate-600">
+                <span className="font-semibold">Brand:</span> {product.brand}
+              </p>
+            )}
             <p className="text-slate-700 leading-relaxed text-base">
               {product.description}
             </p>
@@ -654,6 +708,13 @@ export default function ProductDetail() {
                       onMouseMove={onDragMove}
                       onMouseUp={onDragEnd}
                       onMouseLeave={onDragEnd}
+                      onTouchStart={onTouchStart}
+                      onTouchMove={onTouchMove}
+                      onTouchEnd={onTouchEnd}
+                      onTouchCancel={onTouchEnd}
+                      style={{
+                        touchAction: lightboxZoom > 1 ? "none" : "auto",
+                      }}
                     >
                       <Image
                         src={images[lightboxIndex]}
@@ -926,24 +987,34 @@ export default function ProductDetail() {
           </div>
         )}
 
-        {recentlyViewed.length > 0 && (
+        {moreProducts.length > 0 && (
           <div className="mt-12">
-            <h3 className="text-xl font-semibold text-slate-900 mb-4">
-              Recently viewed
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {recentlyViewed.map((item) => (
-                <div
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-slate-900">
+                More products
+              </h3>
+              <Link
+                href="/shop"
+                className="text-sm font-semibold text-[#1f4b99] hover:text-[#163a79]"
+              >
+                View all →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {moreProducts.map((item) => (
+                <Link
                   key={item.id}
-                  className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm"
+                  href={`/product/${item.id}`}
+                  className="block bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all"
+                  aria-label={`View ${item.name}`}
                 >
-                  <div className="relative h-36 bg-slate-50 rounded-xl mb-3 overflow-hidden">
+                  <div className="relative w-full aspect-square bg-slate-50">
                     {item.imageUrls?.[0] || item.imageUrl ? (
                       <Image
                         src={item.imageUrls?.[0] || item.imageUrl || ""}
                         alt={item.name}
                         fill
-                        className="object-contain"
+                        className="object-contain p-3"
                       />
                     ) : (
                       <div className="text-slate-500 flex items-center justify-center h-full">
@@ -951,19 +1022,23 @@ export default function ProductDetail() {
                       </div>
                     )}
                   </div>
-                  <h4 className="text-sm font-semibold text-slate-900 line-clamp-2">
-                    {item.name}
-                  </h4>
-                  <p className="text-[#1f4b99] font-semibold text-base mt-1">
-                    £{item.price}
-                  </p>
-                  <Button
-                    onClick={() => router.push(`/product/${item.id}`)}
-                    className="w-full mt-3 text-sm"
-                  >
-                    View
-                  </Button>
-                </div>
+                  <div className="px-2 py-2">
+                    <h4
+                      className="text-xs font-semibold text-slate-900 line-clamp-2 overflow-hidden"
+                      style={{
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {item.name}
+                    </h4>
+                    <p className="text-[#1f4b99] font-semibold text-sm mt-1">
+                      £{item.price.toFixed(2)}
+                    </p>
+                  </div>
+                </Link>
               ))}
             </div>
           </div>

@@ -151,10 +151,9 @@ export default function ContactPage() {
               </p>
             </div>
             <div className="space-y-3 text-slate-700 text-sm">
-              <p>Phone: +44 20 7123 4567</p>
-              <p>WhatsApp: +44 7700 900123</p>
-              <p>Email: support@nihaltech.com</p>
-              <p>Address: 221B Tech Street, London</p>
+              <p>WhatsApp: +44 7473 516168</p>
+              <p>Email: info@nihaltech.co.uk</p>
+              <p>Address: 179 North Lane Rushmoor Aldershot GUI24SY</p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
               Hours: Monday to Friday, 9:00-17:00 UK time. We aim to respond

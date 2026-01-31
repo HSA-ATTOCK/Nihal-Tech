@@ -200,6 +200,7 @@ export default function AdminProducts() {
   const [description, setDescription] = useState("");
   const [stock, setStock] = useState("");
   const [category, setCategory] = useState(categories[0]);
+  const [brand, setBrand] = useState("");
   const [variations, setVariations] = useState<VariationInput[]>([
     { ...emptyVariation },
   ]);
@@ -264,6 +265,7 @@ export default function AdminProducts() {
         price: Number(price),
         stock: Number(stock),
         category,
+        brand: brand.trim(),
         images: imageStrings,
         variations: variations
           .filter((variation) => variation.name.trim())
@@ -295,6 +297,7 @@ export default function AdminProducts() {
       setDescription("");
       setStock("");
       setCategory(categories[0]);
+      setBrand("");
       setVariations([{ ...emptyVariation }]);
       setImages([]);
       setImageInputKey((k) => k + 1);
@@ -320,6 +323,12 @@ export default function AdminProducts() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Product name"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
+          />
+          <input
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            placeholder="Brand name (optional)"
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
           />
           <input

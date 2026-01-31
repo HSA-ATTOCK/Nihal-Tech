@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Container from "@/components/Container";
 import Input from "@/components/Input";
 import ProductCard from "@/components/ProductCard";
@@ -17,6 +17,8 @@ interface Product {
   category?: string;
   variations?: Array<{ name: string; options: string[] }>;
   stock: number;
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 const categories = [
@@ -32,6 +34,9 @@ export default function Shop() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [sortBy, setSortBy] = useState<string>("default");
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVariations, setSelectedVariations] = useState<
     Record<string, string>
@@ -45,6 +50,16 @@ export default function Shop() {
 
   useEffect(() => setCurrentPage(1), [search, activeCategory, products]);
 
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setSortOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
+
   const getOptionValue = (opt: RawOption) =>
     typeof opt === "string" ? opt : opt?.value;
   const getOptionPrice = (opt: RawOption) =>
@@ -56,9 +71,18 @@ export default function Shop() {
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/products")
-      .then((res) => res.json())
-      .then((data) => setProducts(data))
+    Promise.all([
+      fetch("/api/products").then((res) => res.json()),
+      fetch("/api/reviews/summary").then((res) => res.json()),
+    ])
+      .then(([productsData, reviewsData]) => {
+        const enriched = productsData.map((p: Product) => ({
+          ...p,
+          averageRating: reviewsData[p.id]?.average || 0,
+          reviewCount: reviewsData[p.id]?.count || 0,
+        }));
+        setProducts(enriched);
+      })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, []);
@@ -70,10 +94,28 @@ export default function Shop() {
     return matchesSearch && matchesCategory;
   });
 
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === "price-low") return a.price - b.price;
+    if (sortBy === "price-high") return b.price - a.price;
+    if (sortBy === "top-reviewed") {
+      if (b.reviewCount !== a.reviewCount)
+        return (b.reviewCount || 0) - (a.reviewCount || 0);
+      return (b.averageRating || 0) - (a.averageRating || 0);
+    }
+    return 0;
+  });
+
   const modalNeedsVariations = (selectedProduct?.variations || []).length > 0;
   const modalAllSelected = (selectedProduct?.variations || []).every(
     (v) => selectedVariations[v.name],
   );
+
+  useEffect(() => {
+    // Ensure we scroll to top whenever the page changes (pagination)
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [currentPage]);
 
   const openModal = (product: Product) => {
     setSelectedProduct(product);
@@ -180,11 +222,105 @@ export default function Shop() {
           })}
         </div>
 
+        <div className="mb-6 flex items-center gap-3">
+          <label className="text-sm font-semibold text-slate-700">
+            Sort by:
+          </label>
+
+          <div className="relative" ref={sortRef}>
+            <button
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={sortOpen}
+              onClick={() => setSortOpen((s) => !s)}
+              className="w-56 rounded-full border-2 border-slate-200 bg-white px-4 py-2 pr-10 text-sm font-medium text-slate-900 focus:border-[#1f4b99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1f4b99] shadow-sm hover:border-slate-300 transition-colors flex items-center justify-between"
+            >
+              <span>
+                {sortBy === "default"
+                  ? "Default"
+                  : sortBy === "top-reviewed"
+                    ? "Top Reviewed"
+                    : sortBy === "price-low"
+                      ? "Price: Low to High"
+                      : "Price: High to Low"}
+              </span>
+              <svg
+                className="w-4 h-4 text-slate-500 ml-2"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M6 8l4 4 4-4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+
+            {sortOpen && (
+              <ul
+                role="listbox"
+                aria-label="Sort products"
+                tabIndex={-1}
+                className="absolute mt-2 w-56 bg-white rounded-lg border border-slate-200 shadow-lg z-50 overflow-hidden"
+              >
+                <li
+                  role="option"
+                  aria-selected={sortBy === "default"}
+                  onClick={() => {
+                    setSortBy("default");
+                    setSortOpen(false);
+                  }}
+                  className={`px-4 py-2 text-sm cursor-pointer hover:bg-slate-100 ${sortBy === "default" ? "bg-slate-100 font-medium" : ""}`}
+                >
+                  Default
+                </li>
+                <li
+                  role="option"
+                  aria-selected={sortBy === "top-reviewed"}
+                  onClick={() => {
+                    setSortBy("top-reviewed");
+                    setSortOpen(false);
+                  }}
+                  className={`px-4 py-2 text-sm cursor-pointer hover:bg-slate-100 ${sortBy === "top-reviewed" ? "bg-slate-100 font-medium" : ""}`}
+                >
+                  Top Reviewed
+                </li>
+                <li
+                  role="option"
+                  aria-selected={sortBy === "price-low"}
+                  onClick={() => {
+                    setSortBy("price-low");
+                    setSortOpen(false);
+                  }}
+                  className={`px-4 py-2 text-sm cursor-pointer hover:bg-slate-100 ${sortBy === "price-low" ? "bg-slate-100 font-medium" : ""}`}
+                >
+                  Price: Low to High
+                </li>
+                <li
+                  role="option"
+                  aria-selected={sortBy === "price-high"}
+                  onClick={() => {
+                    setSortBy("price-high");
+                    setSortOpen(false);
+                  }}
+                  className={`px-4 py-2 text-sm cursor-pointer hover:bg-slate-100 ${sortBy === "price-high" ? "bg-slate-100 font-medium" : ""}`}
+                >
+                  Price: High to Low
+                </li>
+              </ul>
+            )}
+          </div>
+        </div>
+
         {loading ? (
           <div className="text-center py-16 text-slate-600">
             Loading products…
           </div>
-        ) : filtered.length === 0 ? (
+        ) : sorted.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-4xl mb-3">📱</div>
             <p className="text-slate-600 text-base">
@@ -196,7 +332,7 @@ export default function Shop() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filtered
+              {sorted
                 .slice((currentPage - 1) * pageSize, currentPage * pageSize)
                 .map((p) => (
                   <ProductCard
@@ -207,23 +343,29 @@ export default function Shop() {
                 ))}
             </div>
 
-            {Math.ceil(filtered.length / pageSize) > 1 && (
+            {Math.ceil(sorted.length / pageSize) > 1 && (
               <div className="mt-8 flex items-center justify-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  onClick={() => {
+                    setCurrentPage((p) => Math.max(1, p - 1));
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                   disabled={currentPage === 1}
                   className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold hover:border-[#1f4b99] disabled:opacity-50"
                 >
                   ← Prev
                 </button>
                 {Array.from({
-                  length: Math.ceil(filtered.length / pageSize),
+                  length: Math.ceil(sorted.length / pageSize),
                 }).map((_, i) => (
                   <button
                     key={i}
                     type="button"
-                    onClick={() => setCurrentPage(i + 1)}
+                    onClick={() => {
+                      setCurrentPage(i + 1);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
                     className={`px-3 py-1 rounded-lg border text-sm font-semibold ${currentPage === i + 1 ? "bg-[#1f4b99] text-white border-[#1f4b99]" : "bg-white border-slate-200 text-slate-700 hover:border-[#1f4b99]"}`}
                   >
                     {i + 1}
@@ -231,14 +373,13 @@ export default function Shop() {
                 ))}
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
                     setCurrentPage((p) =>
-                      Math.min(Math.ceil(filtered.length / pageSize), p + 1),
-                    )
-                  }
-                  disabled={
-                    currentPage === Math.ceil(filtered.length / pageSize)
-                  }
+                      Math.min(Math.ceil(sorted.length / pageSize), p + 1),
+                    );
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  disabled={currentPage === Math.ceil(sorted.length / pageSize)}
                   className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold hover:border-[#1f4b99] disabled:opacity-50"
                 >
                   Next →

@@ -1,8 +1,42 @@
+"use client";
+
 import Container from "@/components/Container";
 import Button from "@/components/Button";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  imageUrl?: string;
+  imageUrls?: string[];
+}
 
 export default function Home() {
+  const router = useRouter();
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/products").then((res) => (res.ok ? res.json() : [])),
+      fetch("/api/recently-viewed/count").then((res) =>
+        res.ok ? res.json() : {},
+      ),
+    ])
+      .then(([products, viewCounts]: [Product[], Record<string, number>]) => {
+        const sorted = (products || []).sort((a, b) => {
+          const aCount = viewCounts[a.id] || 0;
+          const bCount = viewCounts[b.id] || 0;
+          if (aCount !== bCount) return bCount - aCount;
+          return a.price - b.price;
+        });
+        setFeaturedProducts(sorted.slice(0, 4));
+      })
+      .catch(() => {});
+  }, []);
   return (
     <div className="pb-16">
       <div className="bg-linear-to-br from-white via-[#eef2f9] to-[#e1e9fb] border-b border-slate-200">
@@ -230,6 +264,66 @@ export default function Home() {
             </Link>
           </div>
         </div>
+
+        {featuredProducts.length > 0 && (
+          <div className="mt-14">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="text-sm font-semibold text-slate-500 uppercase tracking-[0.18em]">
+                  Featured
+                </p>
+                <h3 className="text-2xl font-semibold text-slate-900 mt-1">
+                  Popular products
+                </h3>
+              </div>
+              <Link href="/shop">
+                <Button className="text-sm">More products</Button>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {featuredProducts.map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/product/${product.id}`}
+                  className="block bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all"
+                  aria-label={`View ${product.name}`}
+                >
+                  <div className="relative w-full aspect-square bg-slate-50">
+                    {product.imageUrls?.[0] || product.imageUrl ? (
+                      <Image
+                        src={product.imageUrls?.[0] || product.imageUrl || ""}
+                        alt={product.name}
+                        fill
+                        className="object-contain p-3"
+                      />
+                    ) : (
+                      <div className="text-slate-500 flex items-center justify-center h-full">
+                        No image
+                      </div>
+                    )}
+                  </div>
+                  <div className="px-2 py-2">
+                    <h4
+                      className="text-xs font-semibold text-slate-900 line-clamp-2 overflow-hidden"
+                      style={{
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {product.name}
+                    </h4>
+                    <p className="text-[#1f4b99] font-semibold text-sm mt-1">
+                      £{product.price.toFixed(2)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </Container>
     </div>
   );

@@ -8,7 +8,14 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { name, description, price, stock, category = "New Phones" } = body;
+  const {
+    name,
+    description,
+    price,
+    stock,
+    category = "New Phones",
+    brand = "",
+  } = body;
   const images: string[] = Array.isArray(body.images)
     ? body.images
     : body.image
@@ -38,6 +45,7 @@ export async function POST(req: Request) {
       price,
       stock,
       category,
+      brand,
       variations,
       imageUrl: urls[0],
       imageUrls: urls,
@@ -103,6 +111,7 @@ export async function PUT(req: Request) {
       price: body.price ?? existing.price,
       stock: body.stock ?? existing.stock,
       category: body.category ?? existing.category,
+      brand: body.brand ?? existing.brand,
       variations: Array.isArray(body.variations)
         ? body.variations
         : existing.variations,
