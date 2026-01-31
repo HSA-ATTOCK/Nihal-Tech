@@ -151,9 +151,37 @@ export default function ContactPage() {
               </p>
             </div>
             <div className="space-y-3 text-slate-700 text-sm">
-              <p>WhatsApp: +44 7473 516168</p>
-              <p>Email: info@nihaltech.co.uk</p>
-              <p>Address: 179 North Lane Rushmoor Aldershot GUI24SY</p>
+              <p>
+                <a
+                  href="https://wa.me/447473516168"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  aria-label="Chat on WhatsApp"
+                  className="text-[#1f4b99] hover:text-[#163a79] transition-colors"
+                >
+                  WhatsApp: +44 7473 516168
+                </a>
+              </p>
+              <p>
+                <a
+                  href="mailto:info@nihaltech.co.uk"
+                  aria-label="Send email to info@nihaltech.co.uk"
+                  className="text-[#1f4b99] hover:text-[#163a79] transition-colors"
+                >
+                  Email: info@nihaltech.co.uk
+                </a>
+              </p>
+              <p>
+                <a
+                  href="https://maps.app.goo.gl/JqvVS8iitedEJ5KaA"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  aria-label="Open location in Google Maps"
+                  className="text-[#1f4b99] hover:text-[#163a79] transition-colors"
+                >
+                  Address: 179 North Lane Rushmoor Aldershot GUI24SY
+                </a>
+              </p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
               Hours: Monday to Friday, 9:00-17:00 UK time. We aim to respond
