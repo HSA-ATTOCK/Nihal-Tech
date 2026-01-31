@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { RawOption } from "@/lib/types";
 
 type SessionUser = { id?: string; email?: string | null };
 
@@ -68,14 +69,54 @@ export async function POST(req: Request) {
     },
   });
 
+  type ProductShape = { price: number; variations?: unknown };
+
+  type VariationNormalized = { name: string; options?: RawOption[] };
+
+  const computePriceFor = (
+    product: ProductShape,
+    selectedVariations: Record<string, string> = {},
+  ) => {
+    const prices: number[] = [];
+    const variations = Array.isArray(product.variations)
+      ? (product.variations as VariationNormalized[])
+      : [];
+
+    variations.forEach((v) => {
+      const opts = Array.isArray(v.options) ? v.options : [];
+      const sel = selectedVariations?.[v.name];
+      if (!sel) return;
+      const found = opts.find((o) =>
+        typeof o === "string" ? o === sel : o.value === sel,
+      );
+      if (
+        typeof found !== "string" &&
+        found &&
+        typeof found.price === "number"
+      ) {
+        prices.push(found.price);
+      }
+    });
+    if (prices.length === 0) return product.price;
+    if (prices.length === 1) return prices[0];
+    return prices.reduce((a, b) => a + b, 0);
+  };
+
   if (existing) {
     await prisma.cartItem.update({
       where: { id: existing.id },
       data: { quantity: existing.quantity + parsedQty },
     });
   } else {
+    const computedPrice = computePriceFor(product, selectedVariations);
     await prisma.cartItem.create({
-      data: { userId, productId, quantity: parsedQty, selectedVariations },
+      data: {
+        userId,
+        productId,
+        quantity: parsedQty,
+        selectedVariations,
+        price: computedPrice,
+      },
     });
   }
 

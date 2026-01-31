@@ -389,7 +389,7 @@ export default function Navbar() {
           }}
           title="Scroll to top"
           aria-label="Scroll to top"
-          className="fixed z-[100] bottom-5 right-5 lg:bottom-8 lg:right-8 bg-[#1f4b99] text-white rounded-full p-3 shadow-lg hover:bg-[#163a79] transition-transform transform-gpu hover:scale-105"
+          className="fixed z-100 bottom-5 right-5 lg:bottom-8 lg:right-8 bg-[#1f4b99] text-white rounded-full p-3 shadow-lg hover:bg-[#163a79] transition-transform transform-gpu hover:scale-105"
         >
           <svg
             className="w-6 h-6"

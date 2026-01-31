@@ -26,17 +26,18 @@ function filesToBase64(files: File[]): Promise<string[]> {
   return Promise.all(readers);
 }
 
-type VariationInput = { name: string; optionsText: string };
+import { RawOption } from "@/lib/types";
+
+type OptionInput = { value: string; price?: string };
+type VariationInput = { name: string; options: OptionInput[] };
 
 function VariationFields({
   values,
   onChange,
-  hint,
   idPrefix,
 }: {
   values: VariationInput[];
   onChange: (next: VariationInput[]) => void;
-  hint: string;
   idPrefix: string;
 }) {
   const update = (index: number, patch: Partial<VariationInput>) => {
@@ -46,7 +47,40 @@ function VariationFields({
     onChange(next);
   };
 
-  const remove = (index: number) => {
+  const updateOption = (
+    vIdx: number,
+    oIdx: number,
+    patch: Partial<OptionInput>,
+  ) => {
+    const next = values.map((item, idx) => {
+      if (idx !== vIdx) return item;
+      const nextOptions = item.options.map((opt, oi) =>
+        oi === oIdx ? { ...opt, ...patch } : opt,
+      );
+      return { ...item, options: nextOptions };
+    });
+    onChange(next);
+  };
+
+  const addOption = (vIdx: number) => {
+    const next = values.map((item, idx) =>
+      idx === vIdx
+        ? { ...item, options: [...item.options, { value: "", price: "" }] }
+        : item,
+    );
+    onChange(next);
+  };
+
+  const removeOption = (vIdx: number, oIdx: number) => {
+    const next = values.map((item, idx) => {
+      if (idx !== vIdx) return item;
+      if (item.options.length === 1) return item;
+      return { ...item, options: item.options.filter((_, i) => i !== oIdx) };
+    });
+    onChange(next);
+  };
+
+  const removeVariation = (index: number) => {
     if (values.length === 1) return;
     onChange(values.filter((_, idx) => idx !== index));
   };
@@ -57,7 +91,12 @@ function VariationFields({
         <p className="text-sm font-semibold text-slate-800">Variations</p>
         <button
           type="button"
-          onClick={() => onChange([...values, { name: "", optionsText: "" }])}
+          onClick={() =>
+            onChange([
+              ...values,
+              { name: "", options: [{ value: "", price: "" }] },
+            ])
+          }
           className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-[#1f4b99] hover:text-[#1f4b99]"
         >
           + Add variation
@@ -77,22 +116,63 @@ function VariationFields({
               className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
             />
             <div className="flex gap-2">
-              <input
-                value={variation.optionsText}
-                onChange={(e) => update(idx, { optionsText: e.target.value })}
-                placeholder={hint}
-                className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
-              />
+              <div className="flex-1 text-sm text-slate-600">
+                Options with optional prices
+              </div>
               {values.length > 1 ? (
                 <button
                   type="button"
-                  onClick={() => remove(idx)}
+                  onClick={() => removeVariation(idx)}
                   className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-600 hover:border-rose-400"
                 >
                   Remove
                 </button>
               ) : null}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            {variation.options.map((opt, oi) => (
+              <div
+                key={`${idPrefix}-${idx}-opt-${oi}`}
+                className="grid grid-cols-3 gap-2"
+              >
+                <input
+                  value={opt.value}
+                  onChange={(e) =>
+                    updateOption(idx, oi, { value: e.target.value })
+                  }
+                  placeholder="Option label (e.g., 32GB)"
+                  className="col-span-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
+                />
+                <input
+                  value={opt.price}
+                  onChange={(e) =>
+                    updateOption(idx, oi, { price: e.target.value })
+                  }
+                  placeholder="Price (optional)"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
+                />
+                <div className="col-span-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => addOption(idx)}
+                    className="rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-[#1f4b99]"
+                  >
+                    + Option
+                  </button>
+                  {variation.options.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => removeOption(idx, oi)}
+                      className="rounded-lg border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 hover:border-rose-400"
+                    >
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       ))}
@@ -116,11 +196,6 @@ export default function EditProductClient({
 }: {
   product: EditableProduct;
 }) {
-  const variationHint = useMemo(
-    () => "Options comma separated, e.g., Black, Silver",
-    [],
-  );
-
   const [name, setName] = useState(product.name || "");
   const [price, setPrice] = useState(String(product.price ?? ""));
   const [stock, setStock] = useState(String(product.stock ?? ""));
@@ -130,9 +205,16 @@ export default function EditProductClient({
     product.variations?.length
       ? product.variations.map((variation) => ({
           name: variation.name,
-          optionsText: (variation.options || []).join(", "),
+          options: (variation.options || []).map((opt: RawOption) =>
+            typeof opt === "string"
+              ? { value: opt, price: "" }
+              : {
+                  value: opt?.value || "",
+                  price: opt?.price ? String(opt.price) : "",
+                },
+          ),
         }))
-      : [{ name: "", optionsText: "" }],
+      : [{ name: "", options: [{ value: "", price: "" }] }],
   );
 
   const [existingImages, setExistingImages] = useState<string[]>(
@@ -152,6 +234,18 @@ export default function EditProductClient({
       urls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [newImages]);
+
+  const minVariationPrice = useMemo(() => {
+    const p: number[] = [];
+    variations.forEach((v) => {
+      (v.options || []).forEach((opt: OptionInput) => {
+        const price = opt?.price ? Number(opt.price) : undefined;
+        if (typeof price === "number") p.push(price);
+      });
+    });
+    if (p.length) return Math.min(...p);
+    return undefined;
+  }, [variations]);
 
   const handleSave = async () => {
     if (!name.trim() || !price || !stock) {
@@ -180,10 +274,15 @@ export default function EditProductClient({
           .filter((variation) => variation.name.trim())
           .map((variation) => ({
             name: variation.name.trim(),
-            options: variation.optionsText
-              .split(",")
-              .map((option) => option.trim())
-              .filter(Boolean),
+            options: variation.options
+              .map((opt) => {
+                const value = String(opt.value || "").trim();
+                const priceVal = opt.price ? Number(opt.price) : undefined;
+                return priceVal === undefined
+                  ? value
+                  : { value, price: priceVal };
+              })
+              .filter((o) => (typeof o === "string" ? o : o?.value)),
           })),
         keepImageUrls: existingImages,
       };
@@ -254,6 +353,12 @@ export default function EditProductClient({
           placeholder="Price"
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
         />
+        {typeof minVariationPrice === "number" && (
+          <p className="text-xs text-slate-500 mt-1">
+            Displayed price will default to the lowest option price: £
+            {minVariationPrice.toFixed(2)}
+          </p>
+        )}
         <input
           value={stock}
           onChange={(e) => setStock(e.target.value)}
@@ -283,7 +388,6 @@ export default function EditProductClient({
       <VariationFields
         values={variations}
         onChange={setVariations}
-        hint={variationHint}
         idPrefix={`edit-${product.id}`}
       />
 
@@ -328,7 +432,14 @@ export default function EditProductClient({
         <input
           type="file"
           multiple
-          onChange={(e) => setNewImages(Array.from(e.target.files || []))}
+          onChange={(e) => {
+            const files = Array.from(
+              (e.target as HTMLInputElement).files || [],
+            );
+            if (!files.length) return;
+            setNewImages((prev) => [...prev, ...files]);
+            (e.target as HTMLInputElement).value = "";
+          }}
           className="text-sm text-slate-700"
         />
         {newImagePreviews.length ? (

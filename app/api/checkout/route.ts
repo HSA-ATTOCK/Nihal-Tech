@@ -4,6 +4,7 @@ import { buildEmail } from "@/lib/mailTemplate";
 import Stripe from "stripe";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { RawOption } from "@/lib/types";
 
 type SessionUser = { id?: string; email?: string | null };
 
@@ -35,10 +36,52 @@ export async function POST(req: Request) {
     return Response.json({ message: "Cart is empty" }, { status: 400 });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lineItems = cartItems.map((item: any) => ({
+  type ProductShape = { price: number; variations?: unknown };
+
+  type VariationNormalized = { name: string; options?: RawOption[] };
+
+  const computePriceFor = (
+    product: ProductShape,
+    selectedVariations: Record<string, string> = {},
+  ) => {
+    const prices: number[] = [];
+    const variations = Array.isArray(product.variations)
+      ? (product.variations as VariationNormalized[])
+      : [];
+    variations.forEach((v) => {
+      const opts = Array.isArray(v.options) ? v.options : [];
+      const sel = selectedVariations?.[v.name];
+      if (!sel) return;
+      const found = opts.find((o) =>
+        typeof o === "string" ? o === sel : o.value === sel,
+      );
+      if (
+        typeof found !== "string" &&
+        found &&
+        typeof found.price === "number"
+      ) {
+        prices.push(found.price);
+      }
+    });
+    if (prices.length === 0) return product.price;
+    if (prices.length === 1) return prices[0];
+    return prices.reduce((a, b) => a + b, 0);
+  };
+
+  type DbCartItem = {
+    product: { name: string; price: number; variations?: unknown };
+    price?: number;
+    quantity: number;
+    productId: string;
+    selectedVariations?: Record<string, string>;
+  };
+
+  const lineItems = (cartItems as DbCartItem[]).map((item) => ({
     name: item.product.name,
-    price: item.product.price,
+    price:
+      typeof item.price === "number"
+        ? item.price
+        : computePriceFor(item.product, item.selectedVariations || {}),
     quantity: item.quantity,
     productId: item.productId,
     selectedVariations: item.selectedVariations || {},
@@ -81,19 +124,17 @@ export async function POST(req: Request) {
   const adminEmail =
     process.env.ADMIN_EMAIL || process.env.EMAIL_USER || session.user.email;
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const orderLines = lineItems
-    .map((item: any) => {
+    .map((item) => {
       const variations = item.selectedVariations
         ? Object.entries(item.selectedVariations)
-            .map(([k, v]: [string, any]) => `${k}: ${v}`)
+            .map(([k, v]: [string, string]) => `${k}: ${v}`)
             .join(", ")
         : "";
       const line = `${item.name} x${item.quantity} — £${(item.price * item.quantity).toFixed(2)}`;
       return variations ? `${line} (${variations})` : line;
     })
     .join("\n");
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   const emailSubject = `Order confirmed (${method === "cod" ? "Cash on Delivery" : "Card"})`;
   const customerHtml = buildEmail({
@@ -160,8 +201,7 @@ export async function POST(req: Request) {
 
   const sessionStripe = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    line_items: lineItems.map((item: any) => ({
+    line_items: lineItems.map((item) => ({
       price_data: {
         currency: "gbp",
         product_data: { name: item.name },

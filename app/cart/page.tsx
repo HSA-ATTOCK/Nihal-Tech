@@ -5,16 +5,22 @@ import Button from "@/components/Button";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import { RawOption } from "@/lib/types";
 
 interface CartItem {
   id: string;
   quantity: number;
   selectedVariations?: Record<string, string>;
+  price?: number;
   product: {
     id: string;
     name: string;
     price: number;
     imageUrl?: string;
+    variations?: Array<{
+      name: string;
+      options?: (string | { value?: string; price?: number })[];
+    }>;
   };
 }
 
@@ -78,8 +84,37 @@ export default function Cart() {
     }
   };
 
+  const getOptionPrice = (opt?: RawOption) =>
+    typeof opt === "string"
+      ? undefined
+      : opt && typeof opt.price === "number"
+        ? opt.price
+        : undefined;
+
+  const getItemPrice = (item: CartItem) => {
+    // prefer stored price on cart item if present (locks price when item added)
+    if (typeof item.price === "number") return item.price;
+
+    const product = item.product;
+    const prices: number[] = [];
+    (product.variations || []).forEach((v) => {
+      const sel = item.selectedVariations?.[v.name];
+      if (!sel) return;
+      const found = (v.options || []).find((o) =>
+        typeof o === "string"
+          ? o === sel
+          : (o as { value?: string })?.value === sel,
+      ) as RawOption | undefined;
+      const price = getOptionPrice(found);
+      if (typeof price === "number") prices.push(price);
+    });
+    if (prices.length === 0) return product.price;
+    if (prices.length === 1) return prices[0];
+    return prices.reduce((a, b) => a + b, 0);
+  };
+
   const total = cart.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + getItemPrice(item) * item.quantity,
     0,
   );
 
@@ -192,7 +227,7 @@ export default function Cart() {
                     </div>
                     <div className="text-right space-y-3 min-w-30">
                       <p className="text-slate-900 font-semibold text-lg">
-                        £{(item.product.price * item.quantity).toFixed(2)}
+                        £{(getItemPrice(item) * item.quantity).toFixed(2)}
                       </p>
                       <button
                         onClick={() => removeItem(item.id)}

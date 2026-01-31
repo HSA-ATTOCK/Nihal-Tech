@@ -5,6 +5,7 @@ import Input from "@/components/Input";
 import ProductCard from "@/components/ProductCard";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { RawOption } from "@/lib/types";
 
 interface Product {
   id: string;
@@ -36,8 +37,22 @@ export default function Shop() {
     Record<string, string>
   >({});
   const [quantity, setQuantity] = useState(1);
+  const [modalPrice, setModalPrice] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 12;
   const { status } = useSession();
   const router = useRouter();
+
+  useEffect(() => setCurrentPage(1), [search, activeCategory, products]);
+
+  const getOptionValue = (opt: RawOption) =>
+    typeof opt === "string" ? opt : opt?.value;
+  const getOptionPrice = (opt: RawOption) =>
+    typeof opt === "string"
+      ? undefined
+      : opt && typeof opt.price === "number"
+        ? opt.price
+        : undefined;
 
   useEffect(() => {
     setLoading(true);
@@ -68,6 +83,16 @@ export default function Shop() {
       blank[v.name] = "";
     });
     setSelectedVariations(blank);
+
+    // set initial modal price to lowest variation price if available
+    const prices: number[] = [];
+    (product.variations || []).forEach((v) => {
+      (v.options || []).forEach((opt: RawOption) => {
+        if (typeof opt === "object" && typeof opt.price === "number")
+          prices.push(opt.price);
+      });
+    });
+    setModalPrice(prices.length ? Math.min(...prices) : product.price);
   };
 
   const handleConfirmAdd = async () => {
@@ -169,15 +194,58 @@ export default function Shop() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filtered.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                onAddToCart={() => openModal(p)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {filtered
+                .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                .map((p) => (
+                  <ProductCard
+                    key={p.id}
+                    product={p}
+                    onAddToCart={() => openModal(p)}
+                  />
+                ))}
+            </div>
+
+            {Math.ceil(filtered.length / pageSize) > 1 && (
+              <div className="mt-8 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold hover:border-[#1f4b99] disabled:opacity-50"
+                >
+                  ← Prev
+                </button>
+                {Array.from({
+                  length: Math.ceil(filtered.length / pageSize),
+                }).map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`px-3 py-1 rounded-lg border text-sm font-semibold ${currentPage === i + 1 ? "bg-[#1f4b99] text-white border-[#1f4b99]" : "bg-white border-slate-200 text-slate-700 hover:border-[#1f4b99]"}`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage((p) =>
+                      Math.min(Math.ceil(filtered.length / pageSize), p + 1),
+                    )
+                  }
+                  disabled={
+                    currentPage === Math.ceil(filtered.length / pageSize)
+                  }
+                  className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-sm font-semibold hover:border-[#1f4b99] disabled:opacity-50"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
         )}
       </Container>
 
@@ -202,7 +270,7 @@ export default function Shop() {
             </div>
 
             <p className="text-slate-900 text-xl font-semibold">
-              £{selectedProduct.price}
+              £{modalPrice.toFixed(2)}
             </p>
 
             {selectedProduct.variations &&
@@ -218,21 +286,25 @@ export default function Shop() {
                           {v.name}
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {v.options.map((opt) => {
-                            const active = selectedVariations[v.name] === opt;
+                          {(v.options || []).map((opt: RawOption) => {
+                            const value = getOptionValue(opt);
+                            const active = selectedVariations[v.name] === value;
                             return (
                               <button
-                                key={opt}
+                                key={value}
                                 type="button"
-                                onClick={() =>
+                                onClick={() => {
                                   setSelectedVariations((prev) => ({
                                     ...prev,
-                                    [v.name]: opt,
-                                  }))
-                                }
+                                    [v.name]: value,
+                                  }));
+                                  const p = getOptionPrice(opt);
+                                  if (typeof p === "number") setModalPrice(p);
+                                  else setModalPrice(selectedProduct.price);
+                                }}
                                 className={`px-3 py-2 rounded-lg border text-sm transition-all ${active ? "bg-[#1f4b99] border-[#1f4b99] text-white" : "bg-white border-slate-200 text-slate-700 hover:border-[#1f4b99]"}`}
                               >
-                                {opt}
+                                {value}
                               </button>
                             );
                           })}

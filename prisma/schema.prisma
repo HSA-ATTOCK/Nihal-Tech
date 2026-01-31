@@ -254,6 +254,7 @@ model CartItem {
   userId    String
   productId String
   quantity  Int      @default(1)
+  price     Float?
   selectedVariations Json     @default("{}")
   createdAt DateTime @default(now())
 

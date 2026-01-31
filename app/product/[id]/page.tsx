@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import Container from "@/components/Container";
 import Button from "@/components/Button";
 import { useSession } from "next-auth/react";
+import { RawOption } from "@/lib/types";
 
 interface Product {
   id: string;
@@ -16,7 +18,7 @@ interface Product {
   category?: string;
   imageUrl?: string;
   imageUrls?: string[];
-  variations?: Array<{ name: string; options: string[] }>;
+  variations?: Array<{ name: string; options?: RawOption[] }>;
 }
 
 interface Review {
@@ -78,6 +80,7 @@ export default function ProductDetail() {
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [showAllQuestions, setShowAllQuestions] = useState(false);
   const [bundles, setBundles] = useState<Bundle[]>([]);
+  const [displayPrice, setDisplayPrice] = useState<number>(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxZoom, setLightboxZoom] = useState(1);
@@ -185,6 +188,28 @@ export default function ProductDetail() {
       .then((res) => (res.ok ? res.json() : []))
       .then((data: Bundle[]) => setBundles(data || []))
       .catch(() => {});
+  }, [product]);
+
+  const getOptionValue = (opt: RawOption) =>
+    typeof opt === "string" ? opt : opt?.value;
+  const getOptionPrice = (opt: RawOption) =>
+    typeof opt === "string"
+      ? undefined
+      : opt && typeof opt.price === "number"
+        ? opt.price
+        : undefined;
+
+  useEffect(() => {
+    if (!product) return;
+    const prices: number[] = [];
+    (product.variations || []).forEach((v) => {
+      (v.options || []).forEach((opt: RawOption) => {
+        if (typeof opt === "object" && typeof opt.price === "number")
+          prices.push(opt.price);
+      });
+    });
+    if (prices.length) setDisplayPrice(Math.min(...prices));
+    else setDisplayPrice(product.price);
   }, [product]);
 
   useEffect(() => {
@@ -427,6 +452,14 @@ export default function ProductDetail() {
   return (
     <div className="min-h-screen py-12">
       <Container>
+        <div className="mb-6">
+          <Link
+            href="/shop"
+            className="text-sm font-semibold text-[#1f4b99] hover:text-[#163a79]"
+          >
+            ← Back to shop
+          </Link>
+        </div>
         <div className="grid gap-10 md:grid-cols-2">
           <div>
             <div
@@ -475,7 +508,7 @@ export default function ProductDetail() {
               {product.description}
             </p>
             <p className="text-2xl font-semibold text-slate-900">
-              £{product.price}
+              £{displayPrice.toFixed(2)}
             </p>
             <p className="text-slate-600 text-sm">In stock: {product.stock}</p>
 
@@ -494,21 +527,26 @@ export default function ProductDetail() {
                         {v.name}
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        {v.options.map((opt) => {
-                          const active = selectedVariations[v.name] === opt;
+                        {(v.options || []).map((opt: RawOption) => {
+                          const optValue = getOptionValue(opt);
+                          const active =
+                            selectedVariations[v.name] === optValue;
                           return (
                             <button
-                              key={opt}
+                              key={optValue}
                               type="button"
-                              onClick={() =>
+                              onClick={() => {
                                 setSelectedVariations((prev) => ({
                                   ...prev,
-                                  [v.name]: opt,
-                                }))
-                              }
+                                  [v.name]: optValue,
+                                }));
+                                const p = getOptionPrice(opt);
+                                if (typeof p === "number") setDisplayPrice(p);
+                                else setDisplayPrice(product.price);
+                              }}
                               className={`px-3 py-2 rounded-lg border text-sm transition-all ${active ? "bg-[#1f4b99] border-[#1f4b99] text-white" : "bg-white border-slate-200 text-slate-700 hover:border-[#1f4b99]"}`}
                             >
-                              {opt}
+                              {optValue}
                             </button>
                           );
                         })}
