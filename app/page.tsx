@@ -5,7 +5,6 @@ import Button from "@/components/Button";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 
 interface Product {
   id: string;
@@ -16,7 +15,6 @@ interface Product {
 }
 
 export default function Home() {
-  const router = useRouter();
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
 
   useEffect(() => {
@@ -39,6 +37,19 @@ export default function Home() {
   }, []);
   return (
     <div className="pb-16">
+      {/* Banner Section */}
+      <div className="w-full bg-slate-50 border-b border-slate-200">
+        <div className="relative w-full h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px] xl:h-[500px]">
+          <Image
+            src="/banner.png"
+            alt="Nihal Tech Banner"
+            fill
+            className="object-cover object-center"
+            priority
+          />
+        </div>
+      </div>
+
       <div className="bg-linear-to-br from-white via-[#eef2f9] to-[#e1e9fb] border-b border-slate-200">
         <Container>
           <div className="grid lg:grid-cols-2 gap-10 items-center py-16">

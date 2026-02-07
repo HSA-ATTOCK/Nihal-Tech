@@ -1,18 +1,22 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 function NavLink({ href, label }: { href: string; label: string }) {
+  const pathname = usePathname();
+  const isActive = pathname === href;
+
   return (
     <Link
       href={href}
       className="text-slate-700 hover:text-slate-900 transition-colors relative group"
     >
       {label}
-      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#1f4b99] group-hover:w-full transition-all duration-300"></span>
+      <span className={`absolute -bottom-1 left-0 h-0.5 bg-[#1f4b99] transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
     </Link>
   );
 }
@@ -32,23 +36,35 @@ export default function Navbar() {
 
   // Scroll to top button visibility
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
       setShowScrollTop(window.scrollY > 100);
     };
 
-    // attach listener
+    // Check chat state
+    const checkChatState = () => {
+      if (typeof window !== "undefined") {
+        const chatOpen = document.body.getAttribute("data-chat-open") === "true";
+        setIsChatOpen(chatOpen);
+      }
+    };
+
+    // attach listeners
     if (typeof window !== "undefined") {
       window.addEventListener("scroll", onScroll, { passive: true });
+      // Check chat state periodically
+      const interval = setInterval(checkChatState, 100);
       // initialize
       onScroll();
-    }
+      checkChatState();
 
-    return () => {
-      if (typeof window !== "undefined")
+      return () => {
         window.removeEventListener("scroll", onScroll);
-    };
+        clearInterval(interval);
+      };
+    }
   }, []);
 
   useEffect(() => {
@@ -91,6 +107,7 @@ export default function Navbar() {
   const clientLinks = [
     { href: "/", label: "Home" },
     { href: "/shop", label: "Shop" },
+    { href: "/solutions", label: "Solutions" },
     { href: "/repair-booking", label: "Repair" },
     { href: "/cart", label: "Cart" },
   ];
@@ -110,9 +127,21 @@ export default function Navbar() {
       <nav className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
           <Link href={isAdminRoute ? "/admin" : "/"}>
-            <h1 className="relative top-2 text-xl sm:text-2xl font-bold tracking-tight text-slate-900 hover:text-[#1f4b99] transition-colors">
-              Nihal Tech
-            </h1>
+            <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="relative h-8 sm:h-10 w-8 sm:w-10">
+                <Image
+                  src="/logo.jpeg"
+                  alt="Nihal Tech"
+                  width={40}
+                  height={40}
+                  className="h-full w-full object-cover rounded-full"
+                  priority
+                />
+              </div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                Nihal Tech
+              </h1>
+            </div>
           </Link>
 
           {/* Desktop Links */}
@@ -380,7 +409,7 @@ export default function Navbar() {
       </nav>
 
       {/* Scroll to top button (visible on all viewports) */}
-      {showScrollTop && (
+      {showScrollTop && !isChatOpen && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           onKeyDown={(e) => {
@@ -389,7 +418,7 @@ export default function Navbar() {
           }}
           title="Scroll to top"
           aria-label="Scroll to top"
-          className="fixed z-100 bottom-5 right-5 lg:bottom-8 lg:right-8 bg-[#1f4b99] text-white rounded-full p-3 shadow-lg hover:bg-[#163a79] transition-transform transform-gpu hover:scale-105"
+          className="fixed z-100 bottom-5 right-20 lg:bottom-8 lg:right-24 bg-[#1f4b99] text-white rounded-full p-3 shadow-lg hover:bg-[#163a79] transition-transform transform-gpu hover:scale-105"
         >
           <svg
             className="w-6 h-6"

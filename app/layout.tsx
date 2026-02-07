@@ -1,6 +1,7 @@
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ChatWidget from "@/components/ChatWidget";
 import Providers from "./providers";
 import type { Metadata, Viewport } from "next";
 
@@ -27,6 +28,7 @@ export default function RootLayout({
           <Navbar />
           <main className="min-h-screen">{children}</main>
           <Footer />
+          <ChatWidget />
         </Providers>
       </body>
     </html>

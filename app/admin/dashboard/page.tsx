@@ -31,6 +31,12 @@ const actions = [
     desc: "Answer customer product questions",
     icon: "❓",
   },
+  {
+    title: "Support Chat",
+    href: "/admin/chat",
+    desc: "View and respond to customer messages",
+    icon: "💬",
+  },
 ];
 
 export default function AdminDashboard() {

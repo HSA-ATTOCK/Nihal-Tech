@@ -1,8 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
 import Container from "./Container";
 
 const quickLinks = [
   { label: "Shop", href: "/shop" },
+  { label: "Solutions", href: "/solutions" },
   { label: "Repairs", href: "/repair-booking" },
   { label: "Bookings", href: "/bookings" },
   { label: "Orders", href: "/orders" },
@@ -27,14 +29,20 @@ export default function Footer() {
         <div className="py-8 sm:py-12 grid gap-8 sm:gap-10 lg:grid-cols-[1.2fr_1fr_1fr_1fr] text-center lg:text-left">
           <div className="space-y-4">
             <Link href="/" className="block">
-              <span className="inline-block group py-1 rounded transition-all">
-                <span className="block text-sm font-bold text-slate-900 uppercase tracking-[0.15em] group-hover:hidden">
+              <div className="inline-flex items-center gap-3 group py-1 rounded transition-all">
+                <div className="relative h-10 w-10">
+                  <Image
+                    src="/logo.jpeg"
+                    alt="Nihal Tech"
+                    width={40}
+                    height={40}
+                    className="h-full w-full object-cover rounded-full"
+                  />
+                </div>
+                <span className="block text-sm font-bold text-slate-900 group-hover:text-[#1f4b99] uppercase tracking-[0.15em] transition-colors">
                   Nihal Tech
                 </span>
-                <span className="hidden text-sm font-bold text-[#1f4b99] uppercase tracking-[0.15em] group-hover:block">
-                  Nihal Tech
-                </span>
-              </span>
+              </div>
             </Link>
             <p className="text-lg font-semibold text-slate-900">
               Trusted devices, repairs, and support for modern teams.

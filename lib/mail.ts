@@ -1,7 +1,9 @@
 import nodemailer from "nodemailer";
 
 export const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.zoho.com",
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -13,11 +15,9 @@ transporter.verify((error) => {
   if (error) {
     console.error("Email transporter error:", error);
     console.log("⚠️  Email service may not be configured correctly");
+    console.log("   Make sure your Zoho email and password are correct");
     console.log(
-      "   Make sure to use a Gmail App Password, not your regular password",
-    );
-    console.log(
-      "   Generate one at: https://myaccount.google.com/apppasswords",
+      "   If using 2FA, generate an app-specific password at: https://accounts.zoho.com/home#security/application",
     );
   } else {
     console.log("✅ Email server is ready to send messages");

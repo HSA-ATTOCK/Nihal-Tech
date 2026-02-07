@@ -72,7 +72,6 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [inWishlist, setInWishlist] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
-  const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
   const [moreProducts, setMoreProducts] = useState<Product[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewSummary, setReviewSummary] = useState({ average: 0, count: 0 });
@@ -150,20 +149,6 @@ export default function ProductDetail() {
       body: JSON.stringify({ productId: product.id }),
     }).catch(() => {});
   }, [product, status]);
-
-  useEffect(() => {
-    if (status !== "authenticated") return;
-
-    fetch("/api/recently-viewed")
-      .then((res) => (res.ok ? res.json() : []))
-      .then((items: Array<{ product: Product }>) => {
-        const mapped = (items || [])
-          .map((i) => i.product)
-          .filter((p) => p && p.id !== product?.id);
-        setRecentlyViewed(mapped as Product[]);
-      })
-      .catch(() => {});
-  }, [status, product?.id]);
 
   useEffect(() => {
     if (!product) return;
@@ -480,7 +465,7 @@ export default function ProductDetail() {
     });
   };
 
-  const onTouchEnd = (e?: React.TouchEvent<HTMLDivElement>) => {
+  const onTouchEnd = () => {
     setIsDragging(false);
     dragStart.current = null;
   };
