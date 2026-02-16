@@ -25,6 +25,7 @@ const categories = [
   { key: "All", label: "All" },
   { key: "New Phones", label: "New Phones" },
   { key: "Phone Accessories", label: "Phone Accessories" },
+  { key: "Vape", label: "Vape" },
   { key: "Computers/Laptops", label: "Computers/Laptops" },
   { key: "Computer Accessories", label: "Computer Accessories" },
 ];

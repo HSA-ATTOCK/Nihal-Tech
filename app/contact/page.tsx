@@ -164,6 +164,15 @@ export default function ContactPage() {
               </p>
               <p>
                 <a
+                  href="tel:+923420658137"
+                  aria-label="Call +923420658137"
+                  className="text-[#1f4b99] hover:text-[#163a79] transition-colors"
+                >
+                  Phone: +923420658137
+                </a>
+              </p>
+              <p>
+                <a
                   href="mailto:info@nihaltech.co.uk"
                   aria-label="Send email to info@nihaltech.co.uk"
                   className="text-[#1f4b99] hover:text-[#163a79] transition-colors"
@@ -184,7 +193,7 @@ export default function ContactPage() {
               </p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-              Hours: Monday to Friday, 9:00-17:00 UK time. We aim to respond
+              Hours: Monday to Saturday, 9:00-18:30 UK time. We aim to respond
               within one business day.
             </div>
           </div>

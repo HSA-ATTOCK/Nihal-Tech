@@ -61,6 +61,15 @@ export default function Footer() {
               </p>
               <p>
                 <a
+                  href="tel:+923420658137"
+                  aria-label="Call +923420658137"
+                  className="text-[#1f4b99] hover:text-[#163a79] transition-colors"
+                >
+                  Phone: +923420658137
+                </a>
+              </p>
+              <p>
+                <a
                   href="mailto:info@nihaltech.co.uk"
                   aria-label="Send email to info@nihaltech.co.uk"
                   className="text-[#1f4b99] hover:text-[#163a79] transition-colors"
@@ -140,7 +149,7 @@ export default function Footer() {
         <div className="flex flex-col gap-3 pb-8 sm:pb-10 text-sm text-slate-500 text-center">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <p>© {new Date().getFullYear()} Nihal Tech. All rights reserved.</p>
-            <p>Response hours: Mon-Fri, 9:00–17:00 UK time</p>
+            <p>Response hours: Mon–Sat, 9:00–18:30 UK time</p>
           </div>
           <div className="border-t border-slate-200 pt-3">
             <p>

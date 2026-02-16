@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 const categories = [
   "New Phones",
   "Phone Accessories",
+  "Vape",
   "Computers/Laptops",
   "Computer Accessories",
 ];

@@ -180,6 +180,7 @@ export default function Home() {
                 "New Phones",
                 "Laptops & PCs",
                 "Phone Accessories",
+                "Vape",
                 "Laptop & PC Accessories",
               ].map((title) => (
                 <div
