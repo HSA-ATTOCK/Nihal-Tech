@@ -168,6 +168,7 @@ function VariationFields({
                   {opt.imageUrl && !opt.imageFile && (
                     <div className="flex items-center gap-2">
                       <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-slate-200">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={opt.imageUrl}
                           alt="Current"
@@ -217,6 +218,7 @@ function VariationFields({
                   </div>
                   {opt.imageFile && (
                     <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-slate-200">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={URL.createObjectURL(opt.imageFile)}
                         alt="Preview"

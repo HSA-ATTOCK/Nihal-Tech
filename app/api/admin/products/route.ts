@@ -1,15 +1,25 @@
 import cloudinary from "@/lib/cloudinary";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
+type VariationOption =
+  | string
+  | { value: string; price?: number; imageUrl?: string };
+
+type VariationInput = {
+  name: string;
+  options?: VariationOption[];
+};
+
 // Helper function to process variations and upload images
-async function processVariations(variations: any[]) {
+async function processVariations(variations: VariationInput[]) {
   if (!Array.isArray(variations)) return [];
 
   return Promise.all(
     variations.map(async (variation) => ({
       ...variation,
       options: await Promise.all(
-        (variation.options || []).map(async (option: any) => {
+        (variation.options || []).map(async (option: VariationOption) => {
           if (typeof option === "string") return option;
 
           // If option has imageUrl that looks like base64, upload to Cloudinary
@@ -23,7 +33,8 @@ async function processVariations(variations: any[]) {
             } catch (error) {
               console.error("Failed to upload variation image:", error);
               // Remove the failed imageUrl
-              const { imageUrl, ...optionWithoutImage } = option;
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              const { imageUrl: _, ...optionWithoutImage } = option;
               return optionWithoutImage;
             }
           }
@@ -161,7 +172,7 @@ export async function PUT(req: Request) {
         body.buyOneGetOneFree !== undefined
           ? body.buyOneGetOneFree
           : existing.buyOneGetOneFree,
-      variations: processedVariations,
+      variations: (processedVariations ?? []) as Prisma.InputJsonValue,
       imageUrl,
       imageUrls: mergedImageUrls,
     },
