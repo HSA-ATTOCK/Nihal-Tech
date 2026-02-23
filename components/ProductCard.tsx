@@ -10,6 +10,7 @@ interface Product {
   imageUrl?: string;
   imageUrls?: string[];
   variations?: Array<{ name: string; options?: RawOption[] }>;
+  buyOneGetOneFree?: boolean;
 }
 
 interface ProductCardProps {
@@ -60,8 +61,13 @@ export default function ProductCard({
       </Link>
 
       <div className="mt-4 flex flex-col gap-3">
-        <p className="text-[#1f4b99] font-semibold text-xl">
+        <p className="text-[#1f4b99] font-semibold text-xl relative">
           £{displayPrice.toFixed(2)}
+          {product.buyOneGetOneFree && (
+            <span className="ml-2 inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
+              Buy 1 Get 1 FREE
+            </span>
+          )}
         </p>
         <Button onClick={onAddToCart} className="w-full mt-auto text-sm">
           Add to Cart

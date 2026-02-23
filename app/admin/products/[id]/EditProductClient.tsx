@@ -188,6 +188,7 @@ export type EditableProduct = {
   stock: number;
   category?: string | null;
   brand?: string | null;
+  buyOneGetOneFree?: boolean | null;
   description?: string | null;
   variations?: Array<{ name: string; options?: string[] | null }> | null;
   imageUrls?: string[] | null;
@@ -203,6 +204,9 @@ export default function EditProductClient({
   const [stock, setStock] = useState(String(product.stock ?? ""));
   const [category, setCategory] = useState(product.category || categories[0]);
   const [brand, setBrand] = useState(product.brand || "");
+  const [buyOneGetOneFree, setBuyOneGetOneFree] = useState(
+    product.buyOneGetOneFree ?? false,
+  );
   const [description, setDescription] = useState(product.description || "");
   const [variations, setVariations] = useState<VariationInput[]>(
     product.variations?.length
@@ -273,6 +277,7 @@ export default function EditProductClient({
         stock: Number(stock),
         category,
         brand: brand.trim(),
+        buyOneGetOneFree,
         description: description.trim(),
         variations: variations
           .filter((variation) => variation.name.trim())
@@ -357,6 +362,15 @@ export default function EditProductClient({
           placeholder="Brand name (optional)"
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
         />
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={buyOneGetOneFree}
+            onChange={(e) => setBuyOneGetOneFree(e.target.checked)}
+            className="h-4 w-4 rounded border-slate-300 text-[#1f4b99] focus:ring-[#1f4b99]"
+          />
+          Buy one get one free
+        </label>
         <input
           value={price}
           onChange={(e) => setPrice(e.target.value)}

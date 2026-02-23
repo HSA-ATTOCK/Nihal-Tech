@@ -12,6 +12,7 @@ interface Product {
   price: number;
   imageUrl?: string;
   imageUrls?: string[];
+  buyOneGetOneFree?: boolean;
 }
 
 export default function Home() {

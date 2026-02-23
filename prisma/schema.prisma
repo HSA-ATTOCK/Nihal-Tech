@@ -45,6 +45,8 @@ model Product {
   category       String            @default("New Phones")
   variations     Json              @default("[]")
   brand          String?           @default("")
+  /// whether the product should display a buy-one-get-one-free offer
+  buyOneGetOneFree Boolean           @default(false)
   cartItems      CartItem[]
   questions      ProductQuestion[]
   recentlyViewed RecentlyViewed[]

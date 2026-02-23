@@ -21,6 +21,7 @@ type Product = {
   variations?: Array<{ name: string; options: string[] }> | null;
   imageUrl?: string | null;
   imageUrls?: string[] | null;
+  buyOneGetOneFree?: boolean | null;
 };
 
 type OptionInput = { value: string; price?: string };
@@ -202,6 +203,7 @@ export default function AdminProducts() {
   const [stock, setStock] = useState("");
   const [category, setCategory] = useState(categories[0]);
   const [brand, setBrand] = useState("");
+  const [buyOneGetOneFree, setBuyOneGetOneFree] = useState(false);
   const [variations, setVariations] = useState<VariationInput[]>([
     { ...emptyVariation },
   ]);
@@ -267,6 +269,7 @@ export default function AdminProducts() {
         stock: Number(stock),
         category,
         brand: brand.trim(),
+        buyOneGetOneFree,
         images: imageStrings,
         variations: variations
           .filter((variation) => variation.name.trim())
@@ -299,6 +302,7 @@ export default function AdminProducts() {
       setStock("");
       setCategory(categories[0]);
       setBrand("");
+      setBuyOneGetOneFree(false);
       setVariations([{ ...emptyVariation }]);
       setImages([]);
       setImageInputKey((k) => k + 1);
@@ -332,6 +336,15 @@ export default function AdminProducts() {
             placeholder="Brand name (optional)"
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
           />
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={buyOneGetOneFree}
+              onChange={(e) => setBuyOneGetOneFree(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-[#1f4b99] focus:ring-[#1f4b99]"
+            />
+            Buy one get one free
+          </label>
           <input
             value={price}
             onChange={(e) => setPrice(e.target.value)}
@@ -485,6 +498,11 @@ export default function AdminProducts() {
                 <p className="font-semibold text-slate-900">{product.name}</p>
                 <p className="text-sm text-slate-600">
                   £{product.price} • Stock {product.stock}
+                  {product.buyOneGetOneFree ? (
+                    <span className="ml-2 inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
+                      BOGO
+                    </span>
+                  ) : null}
                 </p>
                 <p className="text-xs text-slate-500">
                   {product.category || "Uncategorized"}

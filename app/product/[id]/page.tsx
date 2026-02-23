@@ -20,6 +20,7 @@ interface Product {
   imageUrl?: string;
   imageUrls?: string[];
   variations?: Array<{ name: string; options?: RawOption[] }>;
+  buyOneGetOneFree?: boolean;
 }
 
 interface Review {
@@ -548,6 +549,11 @@ export default function ProductDetail() {
             </p>
             <p className="text-2xl font-semibold text-slate-900">
               £{displayPrice.toFixed(2)}
+              {product.buyOneGetOneFree && (
+                <span className="ml-2 inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
+                  Buy 1 get 1 free
+                </span>
+              )}
             </p>
             <p className="text-slate-600 text-sm">In stock: {product.stock}</p>
 

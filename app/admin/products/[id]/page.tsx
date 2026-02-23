@@ -25,6 +25,8 @@ export default async function ProductEditPage({
     price: Number(product.price),
     stock: Number(product.stock),
     category: product.category,
+    brand: product.brand,
+    buyOneGetOneFree: product.buyOneGetOneFree,
     description: product.description,
     variations: (Array.isArray(product.variations)
       ? product.variations

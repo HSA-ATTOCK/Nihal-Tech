@@ -19,6 +19,7 @@ interface Product {
   stock: number;
   averageRating?: number;
   reviewCount?: number;
+  buyOneGetOneFree?: boolean;
 }
 
 const categories = [

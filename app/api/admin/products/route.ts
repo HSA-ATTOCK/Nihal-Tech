@@ -15,6 +15,7 @@ export async function POST(req: Request) {
     stock,
     category = "New Phones",
     brand = "",
+    buyOneGetOneFree = false,
   } = body;
   const images: string[] = Array.isArray(body.images)
     ? body.images
@@ -46,6 +47,7 @@ export async function POST(req: Request) {
       stock,
       category,
       brand,
+      buyOneGetOneFree,
       variations,
       imageUrl: urls[0],
       imageUrls: urls,
@@ -112,6 +114,10 @@ export async function PUT(req: Request) {
       stock: body.stock ?? existing.stock,
       category: body.category ?? existing.category,
       brand: body.brand ?? existing.brand,
+      buyOneGetOneFree:
+        body.buyOneGetOneFree !== undefined
+          ? body.buyOneGetOneFree
+          : existing.buyOneGetOneFree,
       variations: Array.isArray(body.variations)
         ? body.variations
         : existing.variations,
