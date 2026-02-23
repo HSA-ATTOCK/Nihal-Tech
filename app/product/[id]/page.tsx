@@ -199,6 +199,8 @@ export default function ProductDetail() {
       : opt && typeof opt.price === "number"
         ? opt.price
         : undefined;
+  const getOptionImageUrl = (opt: RawOption) =>
+    typeof opt === "object" && opt?.imageUrl ? opt.imageUrl : undefined;
 
   useEffect(() => {
     if (!product) return;
@@ -341,11 +343,28 @@ export default function ProductDetail() {
     );
   }
 
-  const images = product.imageUrls?.length
+  const productImages = product.imageUrls?.length
     ? product.imageUrls
     : product.imageUrl
       ? [product.imageUrl]
       : [];
+
+  // Collect unique variation option images not already in productImages
+  const variationImages: string[] = [];
+  (product.variations || []).forEach((v) => {
+    (v.options || []).forEach((opt: RawOption) => {
+      const imgUrl = getOptionImageUrl(opt);
+      if (
+        imgUrl &&
+        !productImages.includes(imgUrl) &&
+        !variationImages.includes(imgUrl)
+      ) {
+        variationImages.push(imgUrl);
+      }
+    });
+  });
+
+  const images = [...productImages, ...variationImages];
 
   const activeImageIndex = Math.max(
     0,
@@ -588,6 +607,9 @@ export default function ProductDetail() {
                                 const p = getOptionPrice(opt);
                                 if (typeof p === "number") setDisplayPrice(p);
                                 else setDisplayPrice(product.price);
+                                // Switch to this option's image if it has one
+                                const imgUrl = getOptionImageUrl(opt);
+                                if (imgUrl) setActiveImage(imgUrl);
                               }}
                               className={`px-3 py-2 rounded-lg border text-sm transition-all ${active ? "bg-[#1f4b99] border-[#1f4b99] text-white" : "bg-white border-slate-200 text-slate-700 hover:border-[#1f4b99]"}`}
                             >

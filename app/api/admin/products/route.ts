@@ -1,6 +1,40 @@
 import cloudinary from "@/lib/cloudinary";
 import { prisma } from "@/lib/prisma";
 
+// Helper function to process variations and upload images
+async function processVariations(variations: any[]) {
+  if (!Array.isArray(variations)) return [];
+
+  return Promise.all(
+    variations.map(async (variation) => ({
+      ...variation,
+      options: await Promise.all(
+        (variation.options || []).map(async (option: any) => {
+          if (typeof option === "string") return option;
+
+          // If option has imageUrl that looks like base64, upload to Cloudinary
+          if (option.imageUrl && option.imageUrl.startsWith("data:")) {
+            try {
+              const upload = await cloudinary.uploader.upload(option.imageUrl);
+              return {
+                ...option,
+                imageUrl: upload.secure_url,
+              };
+            } catch (error) {
+              console.error("Failed to upload variation image:", error);
+              // Remove the failed imageUrl
+              const { imageUrl, ...optionWithoutImage } = option;
+              return optionWithoutImage;
+            }
+          }
+
+          return option;
+        }),
+      ),
+    })),
+  );
+}
+
 export async function GET() {
   const products = await prisma.product.findMany({});
   return Response.json(products);
@@ -23,7 +57,7 @@ export async function POST(req: Request) {
       ? [body.image]
       : [];
 
-  const variations = Array.isArray(body.variations) ? body.variations : [];
+  const rawVariations = Array.isArray(body.variations) ? body.variations : [];
 
   if (!images.length) {
     return Response.json(
@@ -39,6 +73,9 @@ export async function POST(req: Request) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const urls = uploads.map((u: any) => u.secure_url);
 
+  // Process variations and upload any variation option images
+  const processedVariations = await processVariations(rawVariations);
+
   const product = await prisma.product.create({
     data: {
       name,
@@ -48,7 +85,7 @@ export async function POST(req: Request) {
       category,
       brand,
       buyOneGetOneFree,
-      variations,
+      variations: processedVariations,
       imageUrl: urls[0],
       imageUrls: urls,
     },
@@ -105,6 +142,12 @@ export async function PUT(req: Request) {
 
   const imageUrl = mergedImageUrls[0];
 
+  // Process variations and upload any variation option images
+  let processedVariations = existing.variations;
+  if (Array.isArray(body.variations)) {
+    processedVariations = await processVariations(body.variations);
+  }
+
   const product = await prisma.product.update({
     where: { id },
     data: {
@@ -118,9 +161,7 @@ export async function PUT(req: Request) {
         body.buyOneGetOneFree !== undefined
           ? body.buyOneGetOneFree
           : existing.buyOneGetOneFree,
-      variations: Array.isArray(body.variations)
-        ? body.variations
-        : existing.variations,
+      variations: processedVariations,
       imageUrl,
       imageUrls: mergedImageUrls,
     },

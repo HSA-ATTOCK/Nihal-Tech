@@ -29,7 +29,12 @@ function filesToBase64(files: File[]): Promise<string[]> {
 
 import { RawOption } from "@/lib/types";
 
-type OptionInput = { value: string; price?: string };
+type OptionInput = {
+  value: string;
+  price?: string;
+  imageUrl?: string;
+  imageFile?: File;
+};
 type VariationInput = { name: string; options: OptionInput[] };
 
 function VariationFields({
@@ -66,7 +71,10 @@ function VariationFields({
   const addOption = (vIdx: number) => {
     const next = values.map((item, idx) =>
       idx === vIdx
-        ? { ...item, options: [...item.options, { value: "", price: "" }] }
+        ? {
+            ...item,
+            options: [...item.options, { value: "", price: "", imageUrl: "" }],
+          }
         : item,
     );
     onChange(next);
@@ -118,7 +126,7 @@ function VariationFields({
             />
             <div className="flex gap-2">
               <div className="flex-1 text-sm text-slate-600">
-                Options with optional prices
+                Options with optional prices & images
               </div>
               {values.length > 1 ? (
                 <button
@@ -132,29 +140,92 @@ function VariationFields({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {variation.options.map((opt, oi) => (
               <div
                 key={`${idPrefix}-${idx}-opt-${oi}`}
-                className="grid grid-cols-3 gap-2"
+                className="space-y-2 rounded-lg border border-slate-200 bg-white p-3"
               >
-                <input
-                  value={opt.value}
-                  onChange={(e) =>
-                    updateOption(idx, oi, { value: e.target.value })
-                  }
-                  placeholder="Option label (e.g., 32GB)"
-                  className="col-span-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
-                />
-                <input
-                  value={opt.price}
-                  onChange={(e) =>
-                    updateOption(idx, oi, { price: e.target.value })
-                  }
-                  placeholder="Price (optional)"
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
-                />
-                <div className="col-span-3 flex gap-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    value={opt.value}
+                    onChange={(e) =>
+                      updateOption(idx, oi, { value: e.target.value })
+                    }
+                    placeholder="Option label (e.g., 32GB)"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
+                  />
+                  <input
+                    value={opt.price}
+                    onChange={(e) =>
+                      updateOption(idx, oi, { price: e.target.value })
+                    }
+                    placeholder="Price (optional)"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  {opt.imageUrl && !opt.imageFile && (
+                    <div className="flex items-center gap-2">
+                      <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-slate-200">
+                        <img
+                          src={opt.imageUrl}
+                          alt="Current"
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <span className="text-xs text-slate-600">
+                        Current image
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          updateOption(idx, oi, { imageFile: file });
+                        }
+                      }}
+                      id={`variation-${idx}-option-${oi}-image-edit`}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor={`variation-${idx}-option-${oi}-image-edit`}
+                      className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-[#1f4b99] hover:text-[#1f4b99] transition-colors"
+                    >
+                      {opt.imageFile
+                        ? `📷 ${opt.imageFile.name}`
+                        : "📷 Choose Image"}
+                    </label>
+                    {(opt.imageFile || opt.imageUrl) && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateOption(idx, oi, {
+                            imageFile: undefined,
+                            imageUrl: "",
+                          })
+                        }
+                        className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-600 hover:border-rose-400"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  {opt.imageFile && (
+                    <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-slate-200">
+                      <img
+                        src={URL.createObjectURL(opt.imageFile)}
+                        alt="Preview"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => addOption(idx)}
@@ -214,14 +285,15 @@ export default function EditProductClient({
           name: variation.name,
           options: (variation.options || []).map((opt: RawOption) =>
             typeof opt === "string"
-              ? { value: opt, price: "" }
+              ? { value: opt, price: "", imageUrl: "" }
               : {
                   value: opt?.value || "",
                   price: opt?.price ? String(opt.price) : "",
+                  imageUrl: opt?.imageUrl || "",
                 },
           ),
         }))
-      : [{ name: "", options: [{ value: "", price: "" }] }],
+      : [{ name: "", options: [{ value: "", price: "", imageUrl: "" }] }],
   );
 
   const [existingImages, setExistingImages] = useState<string[]>(
@@ -270,6 +342,45 @@ export default function EditProductClient({
     setError("");
 
     try {
+      // Handle variation option images
+      const processedVariations = await Promise.all(
+        variations
+          .filter((variation) => variation.name.trim())
+          .map(async (variation) => ({
+            name: variation.name.trim(),
+            options: await Promise.all(
+              variation.options.map(async (opt) => {
+                const value = String(opt.value || "").trim();
+                const priceVal = opt.price ? Number(opt.price) : undefined;
+
+                let imageUrl = opt.imageUrl?.trim() || undefined;
+
+                // Upload variation option image if file is selected
+                if (opt.imageFile) {
+                  const base64 = await filesToBase64([opt.imageFile]);
+                  imageUrl = base64[0]; // This will be processed by the API
+                }
+
+                if (priceVal === undefined && !imageUrl) {
+                  return value;
+                }
+
+                const optionObj: {
+                  value: string;
+                  price?: number;
+                  imageUrl?: string;
+                } = { value };
+                if (priceVal !== undefined) optionObj.price = priceVal;
+                if (imageUrl) optionObj.imageUrl = imageUrl;
+
+                return optionObj;
+              }),
+            ).then((options) =>
+              options.filter((o) => (typeof o === "string" ? o : o?.value)),
+            ),
+          })),
+      );
+
       const payload: Record<string, unknown> = {
         id: product.id,
         name: name.trim(),
@@ -279,20 +390,7 @@ export default function EditProductClient({
         brand: brand.trim(),
         buyOneGetOneFree,
         description: description.trim(),
-        variations: variations
-          .filter((variation) => variation.name.trim())
-          .map((variation) => ({
-            name: variation.name.trim(),
-            options: variation.options
-              .map((opt) => {
-                const value = String(opt.value || "").trim();
-                const priceVal = opt.price ? Number(opt.price) : undefined;
-                return priceVal === undefined
-                  ? value
-                  : { value, price: priceVal };
-              })
-              .filter((o) => (typeof o === "string" ? o : o?.value)),
-          })),
+        variations: processedVariations,
         keepImageUrls: existingImages,
       };
 
@@ -464,8 +562,18 @@ export default function EditProductClient({
             setNewImages((prev) => [...prev, ...files]);
             (e.target as HTMLInputElement).value = "";
           }}
-          className="text-sm text-slate-700"
+          id="add-product-images-input"
+          className="hidden"
         />
+        <label
+          htmlFor="add-product-images-input"
+          className="inline-block cursor-pointer rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-[#1f4b99] hover:text-[#1f4b99] transition-colors"
+        >
+          📷{" "}
+          {newImages.length > 0
+            ? `${newImages.length} image${newImages.length > 1 ? "s" : ""} selected`
+            : "Choose Images"}
+        </label>
         {newImagePreviews.length ? (
           <div className="grid grid-cols-3 gap-3 md:grid-cols-4">
             {newImagePreviews.map((url, idx) => (
