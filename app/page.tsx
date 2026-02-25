@@ -163,7 +163,7 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8 mt-14">
+        <div className="grid lg:grid-cols-3 gap-8 mt-14">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-semibold text-slate-900">
@@ -234,6 +234,122 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-slate-900">
+                Solutions preview
+              </h3>
+              <Link
+                href="/solutions"
+                className="text-sm text-[#1f4b99] font-semibold"
+              >
+                Learn more →
+              </Link>
+            </div>
+
+            {/* Solution cards */}
+            <div className="space-y-3">
+              {[
+                {
+                  icon: "🌐",
+                  title: "Website Development",
+                  desc: "Fast, mobile-friendly websites that convert visitors into customers.",
+                  features: [
+                    "Custom design",
+                    "SEO optimised",
+                    "2-week delivery",
+                  ],
+                },
+                {
+                  icon: "⚙️",
+                  title: "Business Automation",
+                  desc: "Automate repetitive tasks to save time and reduce errors.",
+                  features: [
+                    "Workflow analysis",
+                    "Custom scripts",
+                    "1-week setup",
+                  ],
+                },
+                {
+                  icon: "🚀",
+                  title: "Complete System",
+                  desc: "Website + automations working together for maximum results.",
+                  features: [
+                    "Lead capture",
+                    "CRM integration",
+                    "Analytics dashboard",
+                  ],
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                >
+                  <div className="flex items-start gap-3 mb-2">
+                    <span className="text-xl leading-none mt-0.5">
+                      {item.icon}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {item.title}
+                      </p>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-2 pl-8">
+                    {item.features.map((f) => (
+                      <span
+                        key={f}
+                        className="inline-flex items-center gap-1 rounded-full bg-[#1f4b99]/8 border border-[#1f4b99]/15 px-2 py-0.5 text-[11px] font-medium text-[#1f4b99]"
+                      >
+                        ✓ {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* How it works */}
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-[0.15em] mb-3">
+                How it works
+              </p>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {[
+                  { step: "1", title: "Discovery", sub: "Free 15-min call" },
+                  { step: "2", title: "Proposal", sub: "Clear ROI plan" },
+                  { step: "3", title: "Live", sub: "Within 1 week" },
+                ].map((s, i, arr) => (
+                  <div
+                    key={s.step}
+                    className="relative flex flex-col items-center"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-[#1f4b99]/10 border border-[#1f4b99]/20 flex items-center justify-center text-xs font-bold text-[#1f4b99]">
+                      {s.step}
+                    </div>
+                    <p className="text-xs font-semibold text-slate-800 mt-1">
+                      {s.title}
+                    </p>
+                    <p className="text-[10px] text-slate-500">{s.sub}</p>
+                    {i < arr.length - 1 && (
+                      <span className="absolute top-4 left-[calc(50%+16px)] right-0 border-t border-dashed border-slate-300 w-full" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <Link
+              href="/solutions"
+              className="mt-4 block w-full text-center rounded-lg bg-[#1f4b99] py-2.5 text-sm font-semibold !text-white hover:bg-[#163a79] transition-colors"
+            >
+              Get a free quote
+            </Link>
           </div>
         </div>
 
