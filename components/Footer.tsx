@@ -61,11 +61,11 @@ export default function Footer() {
               </p>
               <p>
                 <a
-                  href="tel:+923420658137"
-                  aria-label="Call +923420658137"
+                  href="tel:01252948079"
+                  aria-label="Call 01252948079"
                   className="text-[#1f4b99] hover:text-[#163a79] transition-colors"
                 >
-                  Phone: +923420658137
+                  Phone: 01252948079
                 </a>
               </p>
               <p>
