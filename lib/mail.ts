@@ -1,14 +1,19 @@
 import nodemailer from "nodemailer";
 
-export const transporter = nodemailer.createTransport({
-  host: "smtp.zoho.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+export const transporter = nodemailer.createTransport(
+  {
+    host: "smtp.zoho.com",
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
   },
-});
+  {
+    from: `Nihal Tech <${process.env.EMAIL_USER}>`,
+  },
+);
 
 // Verify transporter configuration
 transporter.verify((error) => {

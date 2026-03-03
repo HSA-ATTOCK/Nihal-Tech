@@ -150,7 +150,6 @@ export async function POST(req: Request) {
       try {
         await transporter.sendMail({
           to: adminEmail,
-          from: process.env.EMAIL_USER,
           subject: `[Chat] New message from ${user.name}`,
           html: emailHtml,
           replyTo: user.email,

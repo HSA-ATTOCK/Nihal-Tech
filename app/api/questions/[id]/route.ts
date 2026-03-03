@@ -93,7 +93,6 @@ export async function POST(
     transporter
       .sendMail({
         to: customerEmail,
-        from: process.env.EMAIL_USER,
         subject,
         html,
       })

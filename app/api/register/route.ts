@@ -54,7 +54,6 @@ export async function POST(req: Request) {
       return Response.json({
         message:
           "Account created but verification email could not be sent. Please contact support.",
-        verificationToken: token, // Include token for manual verification if needed
       });
     }
 

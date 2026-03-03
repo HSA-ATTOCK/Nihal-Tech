@@ -31,7 +31,6 @@ export async function reportServerError(
   try {
     await transporter.sendMail({
       to,
-      from: process.env.EMAIL_USER,
       subject,
       text,
     });

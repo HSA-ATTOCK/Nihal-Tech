@@ -49,7 +49,6 @@ export async function POST(req: Request) {
     if (adminEmail) {
       await transporter.sendMail({
         to: adminEmail,
-        from: process.env.EMAIL_USER,
         subject: `[Digital Solutions] ${solution} Inquiry from ${name}`,
         html: adminHtml,
         replyTo: email,
@@ -59,7 +58,6 @@ export async function POST(req: Request) {
     // Send confirmation email to client
     await transporter.sendMail({
       to: email,
-      from: process.env.EMAIL_USER,
       subject: "Thank you for your digital solution inquiry - Nihal Tech",
       html: clientHtml,
     });

@@ -35,20 +35,28 @@ export async function POST(req: Request) {
 
   const resetUrl = `${process.env.NEXTAUTH_URL}/reset/${token}`;
 
-  await transporter.sendMail({
-    to: email,
-    subject: "Reset your password",
-    html: buildEmail({
-      title: "Reset your password",
-      greeting: "Hi there,",
-      intro: "We received a request to reset your password.",
-      lines: [
-        `Click the button below to set a new password. If that doesn't work, copy this link: ${resetUrl}`,
-      ],
-      cta: { label: "Reset password", url: resetUrl },
-      footer: "If you didn't request this, you can safely ignore this email.",
-    }),
-  });
+  try {
+    await transporter.sendMail({
+      to: email,
+      subject: "Reset your password",
+      html: buildEmail({
+        title: "Reset your password",
+        greeting: "Hi there,",
+        intro: "We received a request to reset your password.",
+        lines: [
+          `Click the button below to set a new password. If that doesn't work, copy this link: ${resetUrl}`,
+        ],
+        cta: { label: "Reset password", url: resetUrl },
+        footer: "If you didn't request this, you can safely ignore this email.",
+      }),
+    });
+  } catch (emailError) {
+    console.error("Reset email failed:", emailError);
+    return Response.json(
+      { message: "Could not send reset email. Please try again later." },
+      { status: 500 },
+    );
+  }
 
   return Response.json({ message: "Reset email sent" });
 }

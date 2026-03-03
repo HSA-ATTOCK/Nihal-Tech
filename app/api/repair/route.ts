@@ -85,7 +85,6 @@ export async function POST(req: Request) {
     if (adminEmail) {
       await transporter.sendMail({
         to: adminEmail,
-        from: process.env.EMAIL_USER,
         subject: `[Repair] ${phoneModel}`,
         html: buildEmail({
           title: "New repair booking",
@@ -103,7 +102,6 @@ export async function POST(req: Request) {
     if (userEmail) {
       await transporter.sendMail({
         to: userEmail,
-        from: process.env.EMAIL_USER,
         subject: "Your repair booking is confirmed",
         html: buildEmail({
           title: "Repair booking confirmed",
@@ -207,7 +205,6 @@ export async function DELETE(req: Request) {
     if (adminEmail) {
       await transporter.sendMail({
         to: adminEmail,
-        from: process.env.EMAIL_USER,
         subject: `[Repair] Booking canceled ${existing?.phoneModel || id}`,
         html: buildEmail({
           title: "Repair booking canceled",
@@ -224,7 +221,6 @@ export async function DELETE(req: Request) {
     if (userEmail) {
       await transporter.sendMail({
         to: userEmail,
-        from: process.env.EMAIL_USER,
         subject: "Your repair booking was canceled",
         html: buildEmail({
           title: "Booking canceled",

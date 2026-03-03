@@ -138,7 +138,6 @@ export async function POST(req: Request) {
       try {
         await transporter.sendMail({
           to: userEmail,
-          from: process.env.EMAIL_USER,
           subject: "New message from Nihal Tech Support",
           html: emailHtml,
         });

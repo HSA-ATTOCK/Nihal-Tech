@@ -173,7 +173,6 @@ export async function POST(req: Request) {
       sends.push(
         transporter.sendMail({
           to: shipping.email,
-          from: process.env.EMAIL_USER,
           subject: emailSubject,
           html: customerHtml,
         }),
@@ -183,7 +182,6 @@ export async function POST(req: Request) {
       sends.push(
         transporter.sendMail({
           to: adminEmail,
-          from: process.env.EMAIL_USER,
           subject: `Admin copy: ${emailSubject}`,
           html: adminHtml,
         }),

@@ -47,7 +47,6 @@ export async function POST(req: Request) {
     if (adminEmail) {
       await transporter.sendMail({
         to: adminEmail,
-        from: process.env.EMAIL_USER,
         subject: `[Contact] ${subject}`,
         html: adminHtml,
       });
@@ -55,7 +54,6 @@ export async function POST(req: Request) {
 
     await transporter.sendMail({
       to: fromEmail,
-      from: process.env.EMAIL_USER,
       subject: "We received your message",
       html: clientHtml,
     });

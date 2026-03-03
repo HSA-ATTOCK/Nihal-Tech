@@ -80,7 +80,6 @@ export async function POST(req: NextRequest) {
     transporter
       .sendMail({
         to: adminEmail,
-        from: process.env.EMAIL_USER,
         subject,
         html: adminHtml,
       })

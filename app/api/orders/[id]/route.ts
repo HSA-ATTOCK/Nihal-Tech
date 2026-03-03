@@ -37,7 +37,6 @@ async function sendStatusEmail(to: string, subject: string, body: string) {
   try {
     await transporter.sendMail({
       to,
-      from: process.env.EMAIL_USER,
       subject,
       html: buildEmail({
         title: "Order update",

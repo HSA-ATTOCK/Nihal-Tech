@@ -114,7 +114,6 @@ export const POST = withErrorEmail(
       try {
         await transporter.sendMail({
           to,
-          from: process.env.EMAIL_USER,
           subject,
           html,
         });
