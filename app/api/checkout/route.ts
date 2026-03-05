@@ -232,6 +232,9 @@ export async function POST(req: Request) {
     })),
     mode: "payment",
     metadata: { orderId: order.id },
+    // Expire the Stripe session after exactly 5 hours — Stripe will fire
+    // checkout.session.expired which our webhook converts to a cancelled order
+    expires_at: Math.floor(Date.now() / 1000) + 5 * 60 * 60,
     success_url: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/orders?payment=success`,
     cancel_url: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/cart`,
   });
