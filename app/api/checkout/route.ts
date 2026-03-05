@@ -97,6 +97,9 @@ export async function POST(req: Request) {
     });
   }
 
+  const paymentExpiresAt =
+    method === "card" ? new Date(Date.now() + 5 * 60 * 60 * 1000) : null;
+
   const order = await prisma.order.create({
     data: {
       userId,
@@ -106,9 +109,22 @@ export async function POST(req: Request) {
       shippingName: shipping.name,
       shippingEmail: shipping.email,
       items: lineItems,
-      status: "pending",
+      status: method === "card" ? "payment_pending" : "pending",
+      ...(paymentExpiresAt ? { paymentExpiresAt } : {}),
     },
   });
+
+  // For card payments add a warning comment about auto-cancellation
+  if (method === "card") {
+    await prisma.orderComment.create({
+      data: {
+        orderId: order.id,
+        authorRole: "ADMIN",
+        message:
+          "⚠️ Payment pending: Your order has been reserved. Please complete your payment. If payment is not received within 5 hours, this order will be automatically cancelled.",
+      },
+    });
+  }
 
   // Persist contact info for future checkouts
   if (shipping.phone || shipping.address) {
@@ -136,18 +152,26 @@ export async function POST(req: Request) {
     })
     .join("\n");
 
-  const emailSubject = `Order confirmed (${method === "cod" ? "Cash on Delivery" : "Card"})`;
+  const isCard = method === "card";
+  const emailSubject = isCard
+    ? "Payment pending – action required"
+    : `Order confirmed (Cash on Delivery)`;
   const customerHtml = buildEmail({
-    title: "Order confirmed",
+    title: isCard ? "Payment pending" : "Order confirmed",
     greeting: `Hi ${shipping.name || "there"},`,
-    intro: "Thanks for your order. We are preparing it now.",
+    intro: isCard
+      ? "We have reserved your order. Please complete your card payment to confirm it. <strong style='color:#b91c1c;'>If payment is not received within 5 hours, your order will be automatically cancelled.</strong>"
+      : "Thanks for your order. We are preparing it now.",
     lines: [
-      `<strong>Payment:</strong> ${
-        method === "cod" ? "Cash on Delivery" : "Card"
-      }`,
+      `<strong>Payment:</strong> ${isCard ? "Card (pending)" : "Cash on Delivery"}`,
       `<strong>Total:</strong> £${total.toFixed(2)}`,
       `<strong>Items:</strong><br/>${orderLines.replace(/\n/g, "<br/>")}`,
       `<strong>Phone:</strong> ${shipping.phone || "-"}`,
+      ...(isCard
+        ? [
+            `<strong style='color:#b91c1c;'>⚠️ Order will be cancelled if payment is not completed within 5 hours.</strong>`,
+          ]
+        : []),
       `<strong>Address:</strong> ${shipping.address || "-"}`,
     ],
     footer: "You can view your orders anytime from your account.",
@@ -158,9 +182,8 @@ export async function POST(req: Request) {
     intro: "A customer placed a new order.",
     lines: [
       `<strong>Customer:</strong> ${shipping.name} (${shipping.email})`,
-      `<strong>Payment:</strong> ${
-        method === "cod" ? "Cash on Delivery" : "Card"
-      }`,
+      `<strong>Payment:</strong> ${isCard ? "Card (payment pending)" : "Cash on Delivery"}`,
+      `<strong>Status:</strong> ${isCard ? "⚠️ PAYMENT PENDING — auto-cancels in 5 hours if not paid" : "Pending"}`,
       `<strong>Total:</strong> £${total.toFixed(2)}`,
       `<strong>Order ID:</strong> ${order.id}`,
       `<strong>Items:</strong><br/>${orderLines.replace(/\n/g, "<br/>")}`,
@@ -208,8 +231,15 @@ export async function POST(req: Request) {
       quantity: item.quantity,
     })),
     mode: "payment",
-    success_url: process.env.NEXTAUTH_URL || "http://localhost:3000",
+    metadata: { orderId: order.id },
+    success_url: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/orders?payment=success`,
     cancel_url: `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/cart`,
+  });
+
+  // Store Stripe session ID on the order
+  await prisma.order.update({
+    where: { id: order.id },
+    data: { stripeSessionId: sessionStripe.id },
   });
 
   // Clear cart after initiating checkout

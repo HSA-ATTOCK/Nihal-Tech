@@ -126,6 +126,7 @@ export default function Checkout() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const payCod = async () => {
     if (cart.length === 0) {
       alert("Your cart is empty!");
@@ -384,29 +385,152 @@ export default function Checkout() {
                       <p className="text-slate-600">No items in cart</p>
                     </div>
                   ) : (
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <Button
-                        onClick={pay}
-                        className="w-full text-base py-4"
-                        disabled={loading}
-                      >
-                        {loading ? "Processing..." : "Pay with Card"}
-                      </Button>
+                    <div className="flex justify-center">
+                      {/* ── Pay with Card ── */}
                       <button
+                        type="button"
+                        onClick={pay}
+                        disabled={loading}
+                        className="group w-full max-w-sm rounded-2xl bg-gradient-to-br from-[#0f172a] to-[#1e3a6e] text-white font-bold py-5 px-5 hover:from-[#1e3a6e] hover:to-[#1f4b99] transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed flex flex-col items-center gap-3 border border-[#1f4b99]/40"
+                      >
+                        {loading ? (
+                          <div className="flex items-center gap-2 py-2">
+                            <svg
+                              className="animate-spin h-5 w-5 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v8z"
+                              />
+                            </svg>
+                            <span className="text-base">
+                              Processing payment…
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Top row: lock + label */}
+                            <div className="flex items-center gap-2">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5 text-green-400"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M12 1a5 5 0 00-5 5v2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V10a2 2 0 00-2-2h-2V6a5 5 0 00-5-5zm3 7V6a3 3 0 10-6 0v2h6zm-3 4a1 1 0 011 1v3a1 1 0 11-2 0v-3a1 1 0 011-1z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              <span className="text-lg tracking-wide">
+                                Pay with Card
+                              </span>
+                            </div>
+
+                            {/* Card brand badges */}
+                            <div className="flex items-center gap-2 flex-wrap justify-center">
+                              {/* Visa */}
+                              <span className="bg-white rounded px-2 py-[3px] flex items-center justify-center">
+                                <span className="text-[#1a1f71] font-black italic text-sm tracking-wider leading-none">
+                                  VISA
+                                </span>
+                              </span>
+
+                              {/* Mastercard */}
+                              <span className="bg-[#252525] rounded px-1.5 py-[3px] flex items-center gap-0.5">
+                                <span className="w-[18px] h-[18px] rounded-full bg-[#eb001b] block shrink-0" />
+                                <span className="w-[18px] h-[18px] rounded-full bg-[#f79e1b] block -ml-2.5 shrink-0 opacity-95" />
+                                <span className="text-white font-semibold text-[9px] ml-1 tracking-wide leading-none">
+                                  Mastercard
+                                </span>
+                              </span>
+
+                              {/* Amex */}
+                              <span className="bg-[#007bc1] text-white rounded px-2 py-[3px] font-bold text-[10px] tracking-widest leading-none flex items-center">
+                                AMEX
+                              </span>
+
+                              {/* Maestro */}
+                              <span className="bg-[#0099df] text-white rounded px-2 py-[3px] font-semibold text-[10px] tracking-wide leading-none flex items-center">
+                                Maestro
+                              </span>
+                            </div>
+
+                            {/* Stripe badge */}
+                            <div className="flex items-center gap-1.5 text-slate-400 text-[11px]">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-3 w-3 text-green-400"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm-1 14.4l-4-4 1.4-1.4L11 13.6l4.6-4.6 1.4 1.4-6 6z" />
+                              </svg>
+                              <span>Secured by Stripe · SSL encrypted</span>
+                            </div>
+                          </>
+                        )}
+                      </button>
+
+                      {/* ── Cash on Delivery ── */}
+                      {/* <button
                         type="button"
                         onClick={payCod}
                         disabled={loading}
-                        className="w-full text-base py-4 rounded-full border border-slate-200 bg-white text-slate-900 font-semibold hover:border-[#1f4b99] transition"
+                        className="w-full rounded-2xl border-2 border-slate-200 bg-white text-slate-900 font-bold py-5 px-5 hover:border-[#1f4b99] hover:bg-slate-50 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed flex flex-col items-center gap-3"
                       >
-                        {loading ? "Processing..." : "Cash on Delivery"}
-                      </button>
+                        {loading ? (
+                          <span className="text-base py-2">Processing…</span>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl">💵</span>
+                              <span className="text-lg tracking-wide">
+                                Cash on Delivery
+                              </span>
+                            </div>
+                            <p className="text-slate-500 text-xs text-center leading-snug">
+                              Pay in cash when your order arrives.
+                              <br />
+                              No card details required.
+                            </p>
+                          </>
+                        )}
+                      </button> */}
                     </div>
                   )}
 
-                  <p className="text-slate-500 text-sm mt-4">
-                    🔒 Card payments use Stripe; Cash on Delivery confirms your
-                    order instantly.
-                  </p>
+                  <div className="flex items-center justify-center gap-2 mt-4">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 text-green-500"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M12 1a5 5 0 00-5 5v2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V10a2 2 0 00-2-2h-2V6a5 5 0 00-5-5zm3 7V6a3 3 0 10-6 0v2h6z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <p className="text-slate-500 text-xs">
+                      256-bit SSL encryption · PCI-DSS compliant · Powered by
+                      Stripe
+                    </p>
+                  </div>
                 </div>
               )}
             </div>

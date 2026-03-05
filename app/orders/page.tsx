@@ -76,8 +76,22 @@ export default async function Orders() {
                       <p className="text-slate-600 text-sm">
                         {new Date(o.createdAt).toDateString()}
                       </p>
-                      <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-800">
-                        Status: {o.status}
+                      <span
+                        className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
+                          o.status === "payment_pending"
+                            ? "border-amber-300 bg-amber-50 text-amber-800"
+                            : o.status === "confirmed"
+                              ? "border-green-300 bg-green-50 text-green-800"
+                              : o.status === "cancelled"
+                                ? "border-red-300 bg-red-50 text-red-700"
+                                : "border-slate-200 bg-slate-50 text-slate-800"
+                        }`}
+                      >
+                        Status:{" "}
+                        {o.status === "payment_pending"
+                          ? "⚠️ Payment Pending"
+                          : o.status.charAt(0).toUpperCase() +
+                            o.status.slice(1)}
                       </span>
                     </div>
                     <p className="text-[#1f4b99] font-bold text-xl">

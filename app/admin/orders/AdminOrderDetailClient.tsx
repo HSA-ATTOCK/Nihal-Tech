@@ -25,6 +25,8 @@ export type AdminOrderDetail = {
 
 const STATUS_OPTIONS = [
   "Pending",
+  "Payment Pending",
+  "Confirmed",
   "Processing",
   "Shipped",
   "Delivered",

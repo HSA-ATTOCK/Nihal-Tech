@@ -66,21 +66,23 @@ model RepairBooking {
 }
 
 model Order {
-  id              String          @id @default(uuid())
-  userId          String
-  total           Float
-  createdAt       DateTime        @default(now())
-  phone           String          @default("")
-  shippingAddress String          @default("")
-  items           Json            @default("[]")
-  shippingEmail   String          @default("")
-  shippingName    String          @default("")
-  status          String          @default("pending")
-  deliveredAt     DateTime?
-  invoice         Invoice?
-  user            User            @relation(fields: [userId], references: [id])
-  comments        OrderComment[]
-  returns         ReturnRequest[]
+  id               String          @id @default(uuid())
+  userId           String
+  total            Float
+  createdAt        DateTime        @default(now())
+  phone            String          @default("")
+  shippingAddress  String          @default("")
+  items            Json            @default("[]")
+  shippingEmail    String          @default("")
+  shippingName     String          @default("")
+  status           String          @default("pending")
+  deliveredAt      DateTime?
+  stripeSessionId  String?
+  paymentExpiresAt DateTime?
+  invoice          Invoice?
+  user             User            @relation(fields: [userId], references: [id])
+  comments         OrderComment[]
+  returns          ReturnRequest[]
 }
 
 model OrderComment {
