@@ -4,7 +4,7 @@ import Container from "@/components/Container";
 import Input from "@/components/Input";
 import ProductCard from "@/components/ProductCard";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { RawOption } from "@/lib/types";
 
 interface Product {
@@ -32,6 +32,7 @@ const categories = [
 ];
 
 export default function Shop() {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -49,6 +50,20 @@ export default function Shop() {
   const pageSize = 12;
   const { status } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get("category");
+    if (!categoryFromUrl) return;
+
+    const normalized = categoryFromUrl.toLowerCase();
+    const matchedCategory = categories.find(
+      (category) => category.key.toLowerCase() === normalized,
+    );
+
+    if (matchedCategory) {
+      setActiveCategory(matchedCategory.key);
+    }
+  }, [searchParams]);
 
   useEffect(() => setCurrentPage(1), [search, activeCategory, products]);
 

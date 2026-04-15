@@ -12,7 +12,7 @@ function getErrorText(error: unknown) {
 }
 
 const contactEmail =
-  process.env.EMAIL_USER || process.env.SUPPORT_EMAIL || "support@example.com";
+  process.env.EMAIL_USER || process.env.SUPPORT_EMAIL || "info@nihaltech.co.uk";
 const contactPhone =
   process.env.CONTACT_PHONE || process.env.SUPPORT_PHONE || "";
 

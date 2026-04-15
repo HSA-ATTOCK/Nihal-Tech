@@ -126,6 +126,34 @@ export default function Checkout() {
     }
   };
 
+  const payWithPayPal = async () => {
+    if (cart.length === 0) {
+      alert("Your cart is empty!");
+      return;
+    }
+    if (!validateDetails()) {
+      setStep(1);
+      return;
+    }
+
+    setLoading(true);
+    setSuccess(null);
+    try {
+      const res = await axios.post("/api/checkout", {
+        method: "paypal",
+        shipping,
+      });
+      window.location.href = res.data.url;
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "PayPal payment failed. Please try again.",
+      );
+      setLoading(false);
+    }
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const payCod = async () => {
     if (cart.length === 0) {
@@ -385,13 +413,13 @@ export default function Checkout() {
                       <p className="text-slate-600">No items in cart</p>
                     </div>
                   ) : (
-                    <div className="flex justify-center">
+                    <div className="grid gap-3 md:grid-cols-2">
                       {/* ── Pay with Card ── */}
                       <button
                         type="button"
                         onClick={pay}
                         disabled={loading}
-                        className="group w-full max-w-sm rounded-2xl bg-gradient-to-br from-[#0f172a] to-[#1e3a6e] text-white font-bold py-5 px-5 hover:from-[#1e3a6e] hover:to-[#1f4b99] transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed flex flex-col items-center gap-3 border border-[#1f4b99]/40"
+                        className="group w-full max-w-sm rounded-2xl bg-linear-to-br from-[#0f172a] to-[#1e3a6e] text-white font-bold py-5 px-5 hover:from-[#1e3a6e] hover:to-[#1f4b99] transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed flex flex-col items-center gap-3 border border-[#1f4b99]/40"
                       >
                         {loading ? (
                           <div className="flex items-center gap-2 py-2">
@@ -485,6 +513,69 @@ export default function Checkout() {
                         )}
                       </button>
 
+                      {/* ── Pay with PayPal ── */}
+                      <button
+                        type="button"
+                        onClick={payWithPayPal}
+                        disabled={loading}
+                        className="group w-full rounded-2xl bg-linear-to-br from-[#003087] to-[#009cde] text-white font-bold py-5 px-5 hover:from-[#0044b3] hover:to-[#00b5f0] transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-60 disabled:cursor-not-allowed flex flex-col items-center gap-3 border border-[#009cde]/40"
+                      >
+                        {loading ? (
+                          <div className="flex items-center gap-2 py-2">
+                            <svg
+                              className="animate-spin h-5 w-5 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v8z"
+                              />
+                            </svg>
+                            <span className="text-base">
+                              Redirecting to PayPal…
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg tracking-wide">
+                                Pay with PayPal
+                              </span>
+                            </div>
+                            <div className="rounded-md bg-white px-3 py-1.5">
+                              <span className="text-[#003087] font-black text-sm leading-none">
+                                Pay
+                              </span>
+                              <span className="text-[#009cde] font-black text-sm leading-none">
+                                Pal
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-slate-200 text-[11px]">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-3 w-3 text-green-300"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm-1 14.4l-4-4 1.4-1.4L11 13.6l4.6-4.6 1.4 1.4-6 6z" />
+                              </svg>
+                              <span>Secured by PayPal · Buyer protection</span>
+                            </div>
+                          </>
+                        )}
+                      </button>
+
                       {/* ── Cash on Delivery ── */}
                       {/* <button
                         type="button"
@@ -528,7 +619,7 @@ export default function Checkout() {
                     </svg>
                     <p className="text-slate-500 text-xs">
                       256-bit SSL encryption · PCI-DSS compliant · Powered by
-                      Stripe
+                      Stripe / PayPal
                     </p>
                   </div>
                 </div>

@@ -5,7 +5,7 @@ import Link from "next/link";
 const contactEmail =
   process.env.NEXT_PUBLIC_CONTACT_EMAIL ||
   process.env.NEXT_PUBLIC_SUPPORT_EMAIL ||
-  "support@example.com";
+  "info@nihaltech.co.uk";
 const contactPhone =
   process.env.NEXT_PUBLIC_CONTACT_PHONE ||
   process.env.NEXT_PUBLIC_SUPPORT_PHONE ||

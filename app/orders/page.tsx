@@ -7,8 +7,14 @@ type SessionUser = { id?: string; email?: string | null };
 
 export const dynamic = "force-dynamic";
 
-export default async function Orders() {
+export default async function Orders({
+  searchParams,
+}: {
+  searchParams?: Promise<{ payment?: string }>;
+}) {
   const session = await getServerSession(authOptions);
+  const resolvedParams = (await searchParams) || {};
+  const paymentResult = resolvedParams.payment;
 
   if (!session?.user?.email) {
     return (
@@ -47,6 +53,22 @@ export default async function Orders() {
           <h1 className="text-3xl font-bold text-slate-900">My Orders</h1>
           <p className="text-slate-600">Track your purchases</p>
         </div>
+
+        {paymentResult === "success" && (
+          <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            Payment successful. Your order is confirmed.
+          </div>
+        )}
+        {paymentResult === "cancelled" && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Payment was cancelled before completion.
+          </div>
+        )}
+        {paymentResult === "failed" && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            Payment failed. Your order was cancelled.
+          </div>
+        )}
 
         {orders.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-700 shadow-sm">

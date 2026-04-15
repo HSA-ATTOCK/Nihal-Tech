@@ -8,6 +8,44 @@ import { RawOption } from "@/lib/types";
 
 type SessionUser = { id?: string; email?: string | null };
 
+async function getPayPalAccessToken() {
+  const clientId = process.env.PAYPAL_CLIENT_ID;
+  const secret = process.env.PAYPAL_CLIENT_SECRET;
+  const mode = (process.env.PAYPAL_MODE || "sandbox").toLowerCase();
+
+  if (!clientId || !secret) {
+    throw new Error("PayPal is not configured");
+  }
+
+  const baseUrl =
+    mode === "live"
+      ? "https://api-m.paypal.com"
+      : "https://api-m.sandbox.paypal.com";
+
+  const auth = Buffer.from(`${clientId}:${secret}`).toString("base64");
+  const tokenRes = await fetch(`${baseUrl}/v1/oauth2/token`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: "grant_type=client_credentials",
+    cache: "no-store",
+  });
+
+  if (!tokenRes.ok) {
+    const errorText = await tokenRes.text().catch(() => "");
+    throw new Error(`Failed to authenticate PayPal: ${errorText}`);
+  }
+
+  const tokenJson = (await tokenRes.json()) as { access_token?: string };
+  if (!tokenJson.access_token) {
+    throw new Error("PayPal access token missing");
+  }
+
+  return { accessToken: tokenJson.access_token, baseUrl };
+}
+
 export async function POST(req: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: "2025-12-15.clover",
@@ -18,7 +56,12 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const method = body?.method === "cod" ? "cod" : "card";
+  const method =
+    body?.method === "cod"
+      ? "cod"
+      : body?.method === "paypal"
+        ? "paypal"
+        : "card";
   const shipping = {
     name: body?.shipping?.name || session.user.name || "Customer",
     email: body?.shipping?.email || session.user.email || "",
@@ -98,7 +141,9 @@ export async function POST(req: Request) {
   }
 
   const paymentExpiresAt =
-    method === "card" ? new Date(Date.now() + 5 * 60 * 60 * 1000) : null;
+    method === "card" || method === "paypal"
+      ? new Date(Date.now() + 5 * 60 * 60 * 1000)
+      : null;
 
   const order = await prisma.order.create({
     data: {
@@ -109,13 +154,16 @@ export async function POST(req: Request) {
       shippingName: shipping.name,
       shippingEmail: shipping.email,
       items: lineItems,
-      status: method === "card" ? "payment_pending" : "pending",
+      status:
+        method === "card" || method === "paypal"
+          ? "payment_pending"
+          : "pending",
       ...(paymentExpiresAt ? { paymentExpiresAt } : {}),
     },
   });
 
   // For card payments add a warning comment about auto-cancellation
-  if (method === "card") {
+  if (method === "card" || method === "paypal") {
     await prisma.orderComment.create({
       data: {
         orderId: order.id,
@@ -153,21 +201,27 @@ export async function POST(req: Request) {
     .join("\n");
 
   const isCard = method === "card";
+  const isPayPal = method === "paypal";
+  const isOnlinePayment = isCard || isPayPal;
   const emailSubject = isCard
     ? "Payment pending – action required"
-    : `Order confirmed (Cash on Delivery)`;
+    : isPayPal
+      ? "Payment pending – action required"
+      : `Order confirmed (Cash on Delivery)`;
   const customerHtml = buildEmail({
     title: isCard ? "Payment pending" : "Order confirmed",
     greeting: `Hi ${shipping.name || "there"},`,
     intro: isCard
       ? "We have reserved your order. Please complete your card payment to confirm it. <strong style='color:#b91c1c;'>If payment is not received within 5 hours, your order will be automatically cancelled.</strong>"
-      : "Thanks for your order. We are preparing it now.",
+      : isPayPal
+        ? "We have reserved your order. Please complete your PayPal payment to confirm it. <strong style='color:#b91c1c;'>If payment is not received within 5 hours, your order will be automatically cancelled.</strong>"
+        : "Thanks for your order. We are preparing it now.",
     lines: [
-      `<strong>Payment:</strong> ${isCard ? "Card (pending)" : "Cash on Delivery"}`,
+      `<strong>Payment:</strong> ${isCard ? "Card (pending)" : isPayPal ? "PayPal (pending)" : "Cash on Delivery"}`,
       `<strong>Total:</strong> £${total.toFixed(2)}`,
       `<strong>Items:</strong><br/>${orderLines.replace(/\n/g, "<br/>")}`,
       `<strong>Phone:</strong> ${shipping.phone || "-"}`,
-      ...(isCard
+      ...(isOnlinePayment
         ? [
             `<strong style='color:#b91c1c;'>⚠️ Order will be cancelled if payment is not completed within 5 hours.</strong>`,
           ]
@@ -182,8 +236,8 @@ export async function POST(req: Request) {
     intro: "A customer placed a new order.",
     lines: [
       `<strong>Customer:</strong> ${shipping.name} (${shipping.email})`,
-      `<strong>Payment:</strong> ${isCard ? "Card (payment pending)" : "Cash on Delivery"}`,
-      `<strong>Status:</strong> ${isCard ? "⚠️ PAYMENT PENDING — auto-cancels in 5 hours if not paid" : "Pending"}`,
+      `<strong>Payment:</strong> ${isCard ? "Card (payment pending)" : isPayPal ? "PayPal (payment pending)" : "Cash on Delivery"}`,
+      `<strong>Status:</strong> ${isOnlinePayment ? "⚠️ PAYMENT PENDING — auto-cancels in 5 hours if not paid" : "Pending"}`,
       `<strong>Total:</strong> £${total.toFixed(2)}`,
       `<strong>Order ID:</strong> ${order.id}`,
       `<strong>Items:</strong><br/>${orderLines.replace(/\n/g, "<br/>")}`,
@@ -218,6 +272,67 @@ export async function POST(req: Request) {
     await prisma.cartItem.deleteMany({ where: { userId } });
     await sendEmails();
     return Response.json({ message: "Order confirmed for Cash on Delivery." });
+  }
+
+  if (method === "paypal") {
+    const { accessToken, baseUrl } = await getPayPalAccessToken();
+    const siteUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
+    const createOrderRes = await fetch(`${baseUrl}/v2/checkout/orders`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        intent: "CAPTURE",
+        purchase_units: [
+          {
+            reference_id: order.id,
+            amount: {
+              currency_code: "GBP",
+              value: total.toFixed(2),
+            },
+          },
+        ],
+        application_context: {
+          return_url: `${siteUrl}/api/checkout/paypal/complete?orderId=${order.id}`,
+          cancel_url: `${siteUrl}/orders?payment=cancelled`,
+          user_action: "PAY_NOW",
+          brand_name: "Nihal Tech",
+          shipping_preference: "NO_SHIPPING",
+        },
+      }),
+      cache: "no-store",
+    });
+
+    if (!createOrderRes.ok) {
+      const errorText = await createOrderRes.text().catch(() => "");
+      throw new Error(`Failed to create PayPal order: ${errorText}`);
+    }
+
+    const paypalOrder = (await createOrderRes.json()) as {
+      id?: string;
+      links?: Array<{ rel?: string; href?: string }>;
+    };
+
+    const approveLink = paypalOrder.links?.find(
+      (link) => link.rel === "approve",
+    )?.href;
+
+    if (!approveLink || !paypalOrder.id) {
+      throw new Error("PayPal approval URL missing");
+    }
+
+    await prisma.order.update({
+      where: { id: order.id },
+      data: { stripeSessionId: paypalOrder.id },
+    });
+
+    await prisma.cartItem.deleteMany({ where: { userId } });
+    await sendEmails();
+
+    return Response.json({ url: approveLink });
   }
 
   const sessionStripe = await stripe.checkout.sessions.create({
