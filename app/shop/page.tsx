@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import Container from "@/components/Container";
 import Input from "@/components/Input";
 import ProductCard from "@/components/ProductCard";
@@ -31,7 +31,7 @@ const categories = [
   { key: "Computer Accessories", label: "Computer Accessories" },
 ];
 
-export default function Shop() {
+function ShopContent() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -507,5 +507,23 @@ export default function Shop() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Shop() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen py-12">
+          <Container>
+            <div className="text-center py-16 text-slate-600">
+              Loading products…
+            </div>
+          </Container>
+        </div>
+      }
+    >
+      <ShopContent />
+    </Suspense>
   );
 }
