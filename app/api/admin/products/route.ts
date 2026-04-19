@@ -1,6 +1,7 @@
 import cloudinary from "@/lib/cloudinary";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { NextRequest } from "next/server";
 
 type VariationOption =
   | string
@@ -46,8 +47,13 @@ async function processVariations(variations: VariationInput[]) {
   );
 }
 
-export async function GET() {
-  const products = await prisma.product.findMany({});
+export async function GET(req: NextRequest) {
+  const view = req.nextUrl.searchParams.get("view");
+  const isRecycleBin = view === "recycle-bin";
+  const products = await prisma.product.findMany({
+    where: isRecycleBin ? { isDeleted: true } : { isDeleted: false },
+    orderBy: { id: "desc" },
+  });
   return Response.json(products);
 }
 
@@ -116,7 +122,9 @@ export async function PUT(req: Request) {
     );
   }
 
-  const existing = await prisma.product.findUnique({ where: { id } });
+  const existing = await prisma.product.findFirst({
+    where: { id, isDeleted: false },
+  });
   if (!existing) {
     return Response.json({ message: "Not found" }, { status: 404 });
   }

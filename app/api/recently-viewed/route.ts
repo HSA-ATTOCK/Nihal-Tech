@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
   if (!productId)
     return Response.json({ message: "Missing productId" }, { status: 400 });
 
-  const productExists = await prisma.product.findUnique({
-    where: { id: productId },
+  const productExists = await prisma.product.findFirst({
+    where: { id: productId, isDeleted: false },
   });
   if (!productExists)
     return Response.json({ message: "Product not found" }, { status: 404 });

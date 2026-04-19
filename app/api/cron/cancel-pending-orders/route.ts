@@ -97,6 +97,8 @@ export async function GET(req: NextRequest) {
                 "Your order has been automatically cancelled because the payment was not completed within 5 hours.",
               lines: [
                 `<strong>Order ID:</strong> ${order.id}`,
+                `<strong>Products subtotal:</strong> £${order.itemsTotal.toFixed(2)}`,
+                `<strong>Delivery:</strong> ${order.deliveryOptionLabel} - £${order.deliveryPrice.toFixed(2)}`,
                 `<strong>Total:</strong> £${order.total.toFixed(2)}`,
                 `<strong style='color:#b91c1c;'>No charge was made to your card.</strong>`,
               ],
@@ -119,6 +121,8 @@ export async function GET(req: NextRequest) {
               lines: [
                 `<strong>Customer:</strong> ${order.shippingName} (${order.shippingEmail})`,
                 `<strong>Order ID:</strong> ${order.id}`,
+                `<strong>Products subtotal:</strong> £${order.itemsTotal.toFixed(2)}`,
+                `<strong>Delivery:</strong> ${order.deliveryOptionLabel} - £${order.deliveryPrice.toFixed(2)}`,
                 `<strong>Total:</strong> £${order.total.toFixed(2)}`,
               ],
             }),

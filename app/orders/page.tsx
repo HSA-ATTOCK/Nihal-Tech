@@ -85,6 +85,17 @@ export default async function Orders({
                     selectedVariations?: Record<string, string>;
                   }[])
                 : [];
+              const computedItemsTotal = items.reduce(
+                (sum, item) =>
+                  sum + (item.price || 0) * Math.max(item.quantity || 0, 0),
+                0,
+              );
+              const itemsTotal =
+                o.itemsTotal > 0 ? o.itemsTotal : computedItemsTotal;
+              const deliveryPrice =
+                o.deliveryPrice > 0
+                  ? o.deliveryPrice
+                  : Math.max(o.total - itemsTotal, 0);
               return (
                 <div
                   key={o.id}
@@ -116,9 +127,15 @@ export default async function Orders({
                             o.status.slice(1)}
                       </span>
                     </div>
-                    <p className="text-[#1f4b99] font-bold text-xl">
-                      £{o.total.toFixed(2)}
-                    </p>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-500">
+                        Products £{itemsTotal.toFixed(2)} + Delivery £
+                        {deliveryPrice.toFixed(2)}
+                      </p>
+                      <p className="text-[#1f4b99] font-bold text-xl">
+                        £{o.total.toFixed(2)}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800 space-y-2">

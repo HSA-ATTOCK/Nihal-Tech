@@ -33,50 +33,77 @@ export default async function AdminOrders() {
                 user?: { email?: string | null } | null;
                 createdAt: Date | string;
                 status: string;
+                itemsTotal: number;
+                deliveryPrice: number;
                 total: number;
-              }) => (
-                <div
-                  key={o.id}
-                  className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-                >
-                  <div className="space-y-1">
-                    <p className="text-slate-900 font-semibold">
-                      Order #{o.id.slice(0, 8)}
-                    </p>
-                    <p className="text-slate-600 text-sm">{o.user?.email}</p>
-                    <p className="text-slate-500 text-sm">
-                      {new Date(o.createdAt).toLocaleString()}
-                    </p>
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
-                        o.status === "payment_pending"
-                          ? "border-amber-300 bg-amber-50 text-amber-800"
-                          : o.status === "confirmed"
-                            ? "border-green-300 bg-green-50 text-green-800"
-                            : o.status === "cancelled"
-                              ? "border-red-300 bg-red-50 text-red-700"
-                              : "border-slate-200 bg-slate-50 text-slate-800"
-                      }`}
-                    >
-                      Status:{" "}
-                      {o.status === "payment_pending"
-                        ? "⚠️ Payment Pending"
-                        : o.status.charAt(0).toUpperCase() + o.status.slice(1)}
-                    </span>
+                items: unknown;
+              }) => {
+                const items = Array.isArray(o.items)
+                  ? (o.items as Array<{ price?: number; quantity?: number }>)
+                  : [];
+                const computedItemsTotal = items.reduce(
+                  (sum, item) =>
+                    sum + (item.price || 0) * Math.max(item.quantity || 0, 0),
+                  0,
+                );
+                const itemsTotal =
+                  o.itemsTotal > 0 ? o.itemsTotal : computedItemsTotal;
+                const deliveryPrice =
+                  o.deliveryPrice > 0
+                    ? o.deliveryPrice
+                    : Math.max(o.total - itemsTotal, 0);
+
+                return (
+                  <div
+                    key={o.id}
+                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-slate-900 font-semibold">
+                        Order #{o.id.slice(0, 8)}
+                      </p>
+                      <p className="text-slate-600 text-sm">{o.user?.email}</p>
+                      <p className="text-slate-500 text-sm">
+                        {new Date(o.createdAt).toLocaleString()}
+                      </p>
+                      <span
+                        className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
+                          o.status === "payment_pending"
+                            ? "border-amber-300 bg-amber-50 text-amber-800"
+                            : o.status === "confirmed"
+                              ? "border-green-300 bg-green-50 text-green-800"
+                              : o.status === "cancelled"
+                                ? "border-red-300 bg-red-50 text-red-700"
+                                : "border-slate-200 bg-slate-50 text-slate-800"
+                        }`}
+                      >
+                        Status:{" "}
+                        {o.status === "payment_pending"
+                          ? "⚠️ Payment Pending"
+                          : o.status.charAt(0).toUpperCase() +
+                            o.status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-xs text-slate-500">
+                          Products £{itemsTotal.toFixed(2)} + Delivery £
+                          {deliveryPrice.toFixed(2)}
+                        </p>
+                        <p className="text-xl font-bold text-[#1f4b99]">
+                          £{o.total.toFixed(2)}
+                        </p>
+                      </div>
+                      <Link
+                        href={`/admin/orders/${o.id}`}
+                        className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-[#1f4b99]"
+                      >
+                        View
+                      </Link>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <p className="text-xl font-bold text-[#1f4b99]">
-                      £{o.total.toFixed(2)}
-                    </p>
-                    <Link
-                      href={`/admin/orders/${o.id}`}
-                      className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-[#1f4b99]"
-                    >
-                      View
-                    </Link>
-                  </div>
-                </div>
-              ),
+                );
+              },
             )}
           </div>
         )}

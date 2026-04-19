@@ -69,6 +69,9 @@ async function sendConfirmationEmail(
     shippingEmail: string;
     shippingName: string;
     phone: string;
+    itemsTotal: number;
+    deliveryOptionLabel: string;
+    deliveryPrice: number;
     total: number;
     items: unknown;
   },
@@ -98,6 +101,8 @@ async function sendConfirmationEmail(
       "Great news! Your PayPal payment was successful and your order is now confirmed.",
     lines: [
       `<strong>Order ID:</strong> ${order.id}`,
+      `<strong>Products subtotal:</strong> £${order.itemsTotal.toFixed(2)}`,
+      `<strong>Delivery:</strong> ${order.deliveryOptionLabel} - £${order.deliveryPrice.toFixed(2)}`,
       `<strong>Total:</strong> £${order.total.toFixed(2)}`,
       `<strong>Items:</strong><br/>${orderLines.replace(/\n/g, "<br/>")}`,
       `<strong>Phone:</strong> ${order.phone || "-"}`,
@@ -112,6 +117,8 @@ async function sendConfirmationEmail(
     lines: [
       `<strong>Customer:</strong> ${order.shippingName} (${order.shippingEmail})`,
       `<strong>Order ID:</strong> ${order.id}`,
+      `<strong>Products subtotal:</strong> £${order.itemsTotal.toFixed(2)}`,
+      `<strong>Delivery:</strong> ${order.deliveryOptionLabel} - £${order.deliveryPrice.toFixed(2)}`,
       `<strong>Total:</strong> £${order.total.toFixed(2)}`,
       `<strong>Items:</strong><br/>${orderLines.replace(/\n/g, "<br/>")}`,
       `<strong>Phone:</strong> ${order.phone || "-"}`,
@@ -145,6 +152,9 @@ async function sendCancellationEmail(
     id: string;
     shippingEmail: string;
     shippingName: string;
+    itemsTotal: number;
+    deliveryOptionLabel: string;
+    deliveryPrice: number;
     total: number;
   },
   adminEmail: string,
@@ -156,6 +166,8 @@ async function sendCancellationEmail(
       "Your PayPal payment was not completed. Your order has been cancelled and no charge was made.",
     lines: [
       `<strong>Order ID:</strong> ${order.id}`,
+      `<strong>Products subtotal:</strong> £${order.itemsTotal.toFixed(2)}`,
+      `<strong>Delivery:</strong> ${order.deliveryOptionLabel} - £${order.deliveryPrice.toFixed(2)}`,
       `<strong>Total:</strong> £${order.total.toFixed(2)}`,
     ],
     footer: "If you'd like to place a new order, please visit our store.",
@@ -167,6 +179,8 @@ async function sendCancellationEmail(
     lines: [
       `<strong>Customer:</strong> ${order.shippingName} (${order.shippingEmail})`,
       `<strong>Order ID:</strong> ${order.id}`,
+      `<strong>Products subtotal:</strong> £${order.itemsTotal.toFixed(2)}`,
+      `<strong>Delivery:</strong> ${order.deliveryOptionLabel} - £${order.deliveryPrice.toFixed(2)}`,
       `<strong>Total:</strong> £${order.total.toFixed(2)}`,
     ],
   });
@@ -261,6 +275,9 @@ export async function GET(req: Request) {
           shippingEmail: order.shippingEmail,
           shippingName: order.shippingName,
           phone: order.phone,
+          itemsTotal: order.itemsTotal,
+          deliveryOptionLabel: order.deliveryOptionLabel,
+          deliveryPrice: order.deliveryPrice,
           total: order.total,
           items: order.items,
         },
@@ -304,6 +321,9 @@ export async function GET(req: Request) {
             id: order.id,
             shippingEmail: order.shippingEmail,
             shippingName: order.shippingName,
+            itemsTotal: order.itemsTotal,
+            deliveryOptionLabel: order.deliveryOptionLabel,
+            deliveryPrice: order.deliveryPrice,
             total: order.total,
           },
           adminEmail,

@@ -54,7 +54,9 @@ export async function POST(req: Request) {
     );
   }
 
-  const product = await prisma.product.findUnique({ where: { id: productId } });
+  const product = await prisma.product.findFirst({
+    where: { id: productId, isDeleted: false },
+  });
   if (!product) {
     return Response.json({ message: "Product not found" }, { status: 404 });
   }

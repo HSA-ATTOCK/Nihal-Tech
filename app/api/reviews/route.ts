@@ -62,7 +62,9 @@ export async function POST(req: NextRequest) {
     return Response.json({ message: "Rating must be 1-5" }, { status: 400 });
   }
 
-  const product = await prisma.product.findUnique({ where: { id: productId } });
+  const product = await prisma.product.findFirst({
+    where: { id: productId, isDeleted: false },
+  });
   if (!product)
     return Response.json({ message: "Product not found" }, { status: 404 });
 

@@ -5,6 +5,7 @@ import Stripe from "stripe";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
 import { RawOption } from "@/lib/types";
+import { formatDeliveryLabel, getDeliveryOption } from "@/lib/delivery";
 
 type SessionUser = { id?: string; email?: string | null };
 
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
     phone: body?.shipping?.phone || "",
     address: body?.shipping?.address || "",
   };
+  const deliveryOption = getDeliveryOption(body?.deliveryOptionCode);
 
   const userId = (session.user as SessionUser).id || "";
   const cartItems = await prisma.cartItem.findMany({
@@ -130,15 +132,17 @@ export async function POST(req: Request) {
     selectedVariations: item.selectedVariations || {},
   }));
 
-  // Reduce stock and compute total
-  let total = 0;
+  // Reduce stock and compute subtotal
+  let itemsTotal = 0;
   for (const item of lineItems) {
-    total += item.price * item.quantity;
+    itemsTotal += item.price * item.quantity;
     await prisma.product.update({
       where: { id: item.productId },
       data: { stock: { decrement: item.quantity } },
     });
   }
+  const deliveryPrice = deliveryOption.price;
+  const total = itemsTotal + deliveryPrice;
 
   const paymentExpiresAt =
     method === "card" || method === "paypal"
@@ -148,6 +152,10 @@ export async function POST(req: Request) {
   const order = await prisma.order.create({
     data: {
       userId,
+      itemsTotal,
+      deliveryOptionCode: deliveryOption.code,
+      deliveryOptionLabel: formatDeliveryLabel(deliveryOption),
+      deliveryPrice,
       total,
       shippingAddress: shipping.address,
       phone: shipping.phone,
@@ -218,6 +226,8 @@ export async function POST(req: Request) {
         : "Thanks for your order. We are preparing it now.",
     lines: [
       `<strong>Payment:</strong> ${isCard ? "Card (pending)" : isPayPal ? "PayPal (pending)" : "Cash on Delivery"}`,
+      `<strong>Products subtotal:</strong> £${itemsTotal.toFixed(2)}`,
+      `<strong>Delivery:</strong> ${formatDeliveryLabel(deliveryOption)} - £${deliveryPrice.toFixed(2)}`,
       `<strong>Total:</strong> £${total.toFixed(2)}`,
       `<strong>Items:</strong><br/>${orderLines.replace(/\n/g, "<br/>")}`,
       `<strong>Phone:</strong> ${shipping.phone || "-"}`,
@@ -238,6 +248,8 @@ export async function POST(req: Request) {
       `<strong>Customer:</strong> ${shipping.name} (${shipping.email})`,
       `<strong>Payment:</strong> ${isCard ? "Card (payment pending)" : isPayPal ? "PayPal (payment pending)" : "Cash on Delivery"}`,
       `<strong>Status:</strong> ${isOnlinePayment ? "⚠️ PAYMENT PENDING — auto-cancels in 5 hours if not paid" : "Pending"}`,
+      `<strong>Products subtotal:</strong> £${itemsTotal.toFixed(2)}`,
+      `<strong>Delivery:</strong> ${formatDeliveryLabel(deliveryOption)} - £${deliveryPrice.toFixed(2)}`,
       `<strong>Total:</strong> £${total.toFixed(2)}`,
       `<strong>Order ID:</strong> ${order.id}`,
       `<strong>Items:</strong><br/>${orderLines.replace(/\n/g, "<br/>")}`,
@@ -337,14 +349,26 @@ export async function POST(req: Request) {
 
   const sessionStripe = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
-    line_items: lineItems.map((item) => ({
-      price_data: {
-        currency: "gbp",
-        product_data: { name: item.name },
-        unit_amount: Math.round(item.price * 100),
+    line_items: [
+      ...lineItems.map((item) => ({
+        price_data: {
+          currency: "gbp",
+          product_data: { name: item.name },
+          unit_amount: Math.round(item.price * 100),
+        },
+        quantity: item.quantity,
+      })),
+      {
+        price_data: {
+          currency: "gbp",
+          product_data: {
+            name: `Delivery - ${formatDeliveryLabel(deliveryOption)}`,
+          },
+          unit_amount: Math.round(deliveryPrice * 100),
+        },
+        quantity: 1,
       },
-      quantity: item.quantity,
-    })),
+    ],
     mode: "payment",
     metadata: { orderId: order.id },
     // Expire the Stripe session after exactly 5 hours — Stripe will fire

@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   });
 
   const products = await prisma.product.findMany({
-    where: { id: { in: Array.from(productIds) } },
+    where: { id: { in: Array.from(productIds) }, isDeleted: false },
   });
   const productMap = new Map(products.map((p: { id: string }) => [p.id, p]));
 

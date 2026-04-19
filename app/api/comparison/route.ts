@@ -18,7 +18,7 @@ async function loadComparison(userId: string) {
     ? (record?.productIds as string[])
     : [];
   const products = await prisma.product.findMany({
-    where: { id: { in: ids } },
+    where: { id: { in: ids }, isDeleted: false },
   });
   return { record, products, ids };
 }
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       });
 
   const products = await prisma.product.findMany({
-    where: { id: { in: nextIds } },
+    where: { id: { in: nextIds }, isDeleted: false },
   });
   return Response.json({ ids: nextIds, products, recordId: updated.id });
 }
@@ -76,7 +76,7 @@ export async function DELETE(req: NextRequest) {
     data: { productIds: nextIds },
   });
   const products = await prisma.product.findMany({
-    where: { id: { in: nextIds } },
+    where: { id: { in: nextIds }, isDeleted: false },
   });
   return Response.json({ ids: nextIds, products, recordId: record.id });
 }

@@ -33,6 +33,9 @@ export type ReturnRequest = {
 
 export interface OrderDetail {
   id: string;
+  itemsTotal: number;
+  deliveryOptionLabel: string;
+  deliveryPrice: number;
   total: number;
   status: string;
   deliveredAt?: string | null;
@@ -336,10 +339,26 @@ export default function OrderDetailClient({
               })}
             </div>
             <div className="flex items-center justify-between border-t border-slate-200 pt-4 mt-4">
-              <p className="text-sm text-slate-600">Total</p>
-              <p className="text-2xl font-black text-[#1f4b99]">
-                {order.total.toFixed(2)}
-              </p>
+              <div className="space-y-1 w-full">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-600">Products subtotal</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    £{order.itemsTotal.toFixed(2)}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-600">Delivery</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    £{order.deliveryPrice.toFixed(2)}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-200 pt-2 mt-2">
+                  <p className="text-sm text-slate-700 font-semibold">Total</p>
+                  <p className="text-2xl font-black text-[#1f4b99]">
+                    £{order.total.toFixed(2)}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -376,6 +395,17 @@ export default function OrderDetailClient({
                 </p>
                 <p className="text-slate-900 font-semibold whitespace-pre-line">
                   {order.shippingAddress || "-"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Delivery option
+                </p>
+                <p className="text-slate-900 font-semibold">
+                  {order.deliveryOptionLabel || "-"}
+                </p>
+                <p className="text-sm text-slate-700">
+                  Delivery charge: £{order.deliveryPrice.toFixed(2)}
                 </p>
               </div>
             </div>

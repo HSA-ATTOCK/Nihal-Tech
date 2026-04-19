@@ -16,7 +16,9 @@ function NavLink({ href, label }: { href: string; label: string }) {
       className="text-slate-700 hover:text-slate-900 transition-colors relative group"
     >
       {label}
-      <span className={`absolute -bottom-1 left-0 h-0.5 bg-[#1f4b99] transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+      <span
+        className={`absolute -bottom-1 left-0 h-0.5 bg-[#1f4b99] transition-all duration-300 ${isActive ? "w-full" : "w-0 group-hover:w-full"}`}
+      ></span>
     </Link>
   );
 }
@@ -37,6 +39,44 @@ export default function Navbar() {
   // Scroll to top button visibility
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    const loadCartCount = async () => {
+      if (status !== "authenticated" || isAdminRoute) {
+        setCartCount(0);
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/cart", { cache: "no-store" });
+        if (!res.ok) {
+          setCartCount(0);
+          return;
+        }
+        const items = (await res.json()) as Array<{ quantity?: number }>;
+        const count = Array.isArray(items)
+          ? items.reduce(
+              (sum, item) => sum + Math.max(item.quantity || 0, 0),
+              0,
+            )
+          : 0;
+        setCartCount(count);
+      } catch {
+        setCartCount(0);
+      }
+    };
+
+    loadCartCount();
+
+    // Keep badge fresh after add/remove cart actions in other pages.
+    const onFocus = () => loadCartCount();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [status, isAdminRoute, pathname]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -46,7 +86,8 @@ export default function Navbar() {
     // Check chat state
     const checkChatState = () => {
       if (typeof window !== "undefined") {
-        const chatOpen = document.body.getAttribute("data-chat-open") === "true";
+        const chatOpen =
+          document.body.getAttribute("data-chat-open") === "true";
         setIsChatOpen(chatOpen);
       }
     };
@@ -146,9 +187,19 @@ export default function Navbar() {
 
           {/* Desktop Links */}
           <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
-            {linksToRender.map((link) => (
-              <NavLink key={link.href} href={link.href} label={link.label} />
-            ))}
+            {linksToRender.map((link) => {
+              const isCart = !isAdminRoute && link.href === "/cart";
+              return (
+                <div key={link.href} className="relative">
+                  <NavLink href={link.href} label={link.label} />
+                  {isCart && cartCount > 0 && (
+                    <span className="absolute -top-2 -right-3 min-w-5 h-5 px-1 rounded-full bg-[#1f4b99] text-white text-[10px] leading-5 font-bold text-center">
+                      {cartCount > 99 ? "99+" : cartCount}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
 
             {status === "loading" && (
               <span className="text-xs text-slate-500">Loading...</span>
@@ -367,16 +418,24 @@ export default function Navbar() {
                   </button>
                 </div>
                 <div className="py-1">
-                  {linksToRender.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-md"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
+                  {linksToRender.map((link) => {
+                    const isCart = !isAdminRoute && link.href === "/cart";
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="flex items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-md"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <span>{link.label}</span>
+                        {isCart && cartCount > 0 && (
+                          <span className="inline-flex min-w-5 h-5 px-1 items-center justify-center rounded-full bg-[#1f4b99] text-white text-[10px] font-bold">
+                            {cartCount > 99 ? "99+" : cartCount}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
                   {status === "loading" && (
                     <div className="py-2 px-4 text-sm text-slate-500">
                       Loading...

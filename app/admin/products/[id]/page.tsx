@@ -11,8 +11,8 @@ export default async function ProductEditPage({
 }) {
   const { id } = await params;
 
-  const product = await prisma.product.findUnique({
-    where: { id },
+  const product = await prisma.product.findFirst({
+    where: { id, isDeleted: false },
   });
 
   if (!product) {

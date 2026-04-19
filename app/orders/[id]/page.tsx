@@ -81,6 +81,18 @@ export default async function OrderDetail({
     ? (order.items as unknown as OrderItem[])
     : [];
 
+  const computedItemsTotal = items.reduce(
+    (sum, item) => sum + (item.price || 0) * Math.max(item.quantity || 0, 0),
+    0,
+  );
+  const itemsTotal =
+    order.itemsTotal > 0 ? order.itemsTotal : computedItemsTotal;
+  const deliveryPrice =
+    order.deliveryPrice > 0
+      ? order.deliveryPrice
+      : Math.max(order.total - itemsTotal, 0);
+  const deliveryOptionLabel = order.deliveryOptionLabel || "Standard delivery";
+
   const productIds = items.map((i) => i.productId).filter(Boolean) as string[];
 
   let userReviews: Record<string, Review> = {};
@@ -98,6 +110,9 @@ export default async function OrderDetail({
         <OrderDetailClient
           order={{
             id: order.id,
+            itemsTotal,
+            deliveryOptionLabel,
+            deliveryPrice,
             total: order.total,
             status: order.status,
             shippingName: order.shippingName,

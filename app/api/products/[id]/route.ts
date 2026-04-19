@@ -12,7 +12,9 @@ export async function GET(
     return Response.json({ message: "Missing id" }, { status: 400 });
   }
 
-  const product = await prisma.product.findUnique({ where: { id } });
+  const product = await prisma.product.findFirst({
+    where: { id, isDeleted: false },
+  });
 
   if (!product) {
     return Response.json({ message: "Not found" }, { status: 404 });

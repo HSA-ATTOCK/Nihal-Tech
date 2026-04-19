@@ -39,6 +39,9 @@ async function sendConfirmationEmail(
     shippingEmail: string;
     shippingName: string;
     phone: string;
+    itemsTotal: number;
+    deliveryOptionLabel: string;
+    deliveryPrice: number;
     total: number;
     items: unknown;
   },
@@ -66,6 +69,8 @@ async function sendConfirmationEmail(
       "Great news! Your payment was successful and your order is now confirmed.",
     lines: [
       `<strong>Order ID:</strong> ${order.id}`,
+      `<strong>Products subtotal:</strong> £${order.itemsTotal.toFixed(2)}`,
+      `<strong>Delivery:</strong> ${order.deliveryOptionLabel} - £${order.deliveryPrice.toFixed(2)}`,
       `<strong>Total:</strong> £${order.total.toFixed(2)}`,
       `<strong>Items:</strong><br/>${orderLines.replace(/\n/g, "<br/>")}`,
       `<strong>Phone:</strong> ${order.phone || "-"}`,
@@ -79,6 +84,8 @@ async function sendConfirmationEmail(
     lines: [
       `<strong>Customer:</strong> ${order.shippingName} (${order.shippingEmail})`,
       `<strong>Order ID:</strong> ${order.id}`,
+      `<strong>Products subtotal:</strong> £${order.itemsTotal.toFixed(2)}`,
+      `<strong>Delivery:</strong> ${order.deliveryOptionLabel} - £${order.deliveryPrice.toFixed(2)}`,
       `<strong>Total:</strong> £${order.total.toFixed(2)}`,
       `<strong>Items:</strong><br/>${orderLines.replace(/\n/g, "<br/>")}`,
       `<strong>Phone:</strong> ${order.phone || "-"}`,
@@ -112,6 +119,9 @@ async function sendCancellationEmail(
     id: string;
     shippingEmail: string;
     shippingName: string;
+    itemsTotal: number;
+    deliveryOptionLabel: string;
+    deliveryPrice: number;
     total: number;
   },
   reason: "payment_failed" | "payment_expired",
@@ -133,6 +143,8 @@ async function sendCancellationEmail(
     intro: customerMessage,
     lines: [
       `<strong>Order ID:</strong> ${order.id}`,
+      `<strong>Products subtotal:</strong> £${order.itemsTotal.toFixed(2)}`,
+      `<strong>Delivery:</strong> ${order.deliveryOptionLabel} - £${order.deliveryPrice.toFixed(2)}`,
       `<strong>Total:</strong> £${order.total.toFixed(2)}`,
     ],
     footer: "If you'd like to place a new order, please visit our store.",
@@ -144,6 +156,8 @@ async function sendCancellationEmail(
     lines: [
       `<strong>Customer:</strong> ${order.shippingName} (${order.shippingEmail})`,
       `<strong>Order ID:</strong> ${order.id}`,
+      `<strong>Products subtotal:</strong> £${order.itemsTotal.toFixed(2)}`,
+      `<strong>Delivery:</strong> ${order.deliveryOptionLabel} - £${order.deliveryPrice.toFixed(2)}`,
       `<strong>Total:</strong> £${order.total.toFixed(2)}`,
       `<strong>Reason:</strong> ${reason === "payment_expired" ? "Payment window expired (5 hours)" : "Payment failed"}`,
     ],
@@ -231,6 +245,9 @@ export async function POST(req: NextRequest) {
           shippingEmail: order.shippingEmail,
           shippingName: order.shippingName,
           phone: order.phone,
+          itemsTotal: order.itemsTotal,
+          deliveryOptionLabel: order.deliveryOptionLabel,
+          deliveryPrice: order.deliveryPrice,
           total: order.total,
           items: order.items,
         },
@@ -303,6 +320,9 @@ export async function POST(req: NextRequest) {
           id: order.id,
           shippingEmail: order.shippingEmail,
           shippingName: order.shippingName,
+          itemsTotal: order.itemsTotal,
+          deliveryOptionLabel: order.deliveryOptionLabel,
+          deliveryPrice: order.deliveryPrice,
           total: order.total,
         },
         reason,

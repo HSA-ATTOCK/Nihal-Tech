@@ -247,8 +247,11 @@ function VariationFields({ values, onChange, idPrefix }: VariationFieldsProps) {
 export default function AdminProducts() {
   const [tab, setTab] = useState<"add" | "manage">("add");
   const [products, setProducts] = useState<Product[]>([]);
+  const [productSearch, setProductSearch] = useState("");
+  const [managePage, setManagePage] = useState(1);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [savingNew, setSavingNew] = useState(false);
+  const [actioningId, setActioningId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -265,6 +268,7 @@ export default function AdminProducts() {
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageInputKey, setImageInputKey] = useState(0);
+  const managePageSize = 9;
 
   const loadProducts = useCallback(async () => {
     setLoadingProducts(true);
@@ -284,6 +288,36 @@ export default function AdminProducts() {
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  useEffect(() => {
+    setManagePage(1);
+  }, [productSearch, products.length]);
+
+  const removeProduct = async (product: Product) => {
+    const ok = window.confirm(
+      `Are you sure you want to remove "${product.name}"? It will move to recycle bin and be permanently deleted after 5 days.`,
+    );
+    if (!ok) return;
+
+    setActioningId(product.id);
+    setMessage("");
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/products/${product.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.message || "Failed to remove");
+      setMessage(
+        "Product moved to recycle bin. You can restore it from Recycle Bin page.",
+      );
+      await loadProducts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove product");
+    } finally {
+      setActioningId(null);
+    }
+  };
 
   useEffect(() => {
     const urls = images.map((file) => URL.createObjectURL(file));
@@ -401,6 +435,65 @@ export default function AdminProducts() {
     setError("");
     setTab(nextTab);
   };
+
+  const filteredManageProducts = useMemo(() => {
+    const query = productSearch.trim().toLowerCase();
+    if (!query) return products;
+
+    return products.filter((product) => {
+      const haystack = [
+        product.name,
+        product.category || "",
+        product.description || "",
+        product.id,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [productSearch, products]);
+
+  const totalManagePages = Math.max(
+    1,
+    Math.ceil(filteredManageProducts.length / managePageSize),
+  );
+  const currentManagePage = Math.min(managePage, totalManagePages);
+  const paginatedManageProducts = useMemo(() => {
+    const start = (currentManagePage - 1) * managePageSize;
+    return filteredManageProducts.slice(start, start + managePageSize);
+  }, [currentManagePage, filteredManageProducts]);
+
+  const visibleManagePages = useMemo(() => {
+    if (totalManagePages <= 7) {
+      return Array.from({ length: totalManagePages }, (_, i) => i + 1);
+    }
+
+    if (currentManagePage <= 4) {
+      return [1, 2, 3, 4, 5, -1, totalManagePages];
+    }
+
+    if (currentManagePage >= totalManagePages - 3) {
+      return [
+        1,
+        -1,
+        totalManagePages - 4,
+        totalManagePages - 3,
+        totalManagePages - 2,
+        totalManagePages - 1,
+        totalManagePages,
+      ];
+    }
+
+    return [
+      1,
+      -1,
+      currentManagePage - 1,
+      currentManagePage,
+      currentManagePage + 1,
+      -1,
+      totalManagePages,
+    ];
+  }, [currentManagePage, totalManagePages]);
 
   const addTab = (
     <div className="grid gap-6 lg:grid-cols-3">
@@ -556,18 +649,41 @@ export default function AdminProducts() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-slate-800">Products</p>
-        {loadingProducts && (
-          <span className="text-xs text-slate-500">Loading...</span>
-        )}
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/products/recycle-bin"
+            className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
+          >
+            Open recycle bin
+          </Link>
+          {loadingProducts && (
+            <span className="text-xs text-slate-500">Loading...</span>
+          )}
+        </div>
       </div>
 
-      {products.length === 0 && !loadingProducts ? (
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+        <div className="w-full md:max-w-md">
+          <input
+            value={productSearch}
+            onChange={(e) => setProductSearch(e.target.value)}
+            placeholder="Search product by name, category, description or id"
+            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#1f4b99] focus:outline-none"
+          />
+        </div>
+        <p className="text-xs text-slate-500">
+          Showing {paginatedManageProducts.length} of{" "}
+          {filteredManageProducts.length} product(s)
+        </p>
+      </div>
+
+      {filteredManageProducts.length === 0 && !loadingProducts ? (
         <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-          No products yet.
+          No products found for this search.
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {products.map((product) => (
+          {paginatedManageProducts.map((product) => (
             <div
               key={product.id}
               className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
@@ -601,18 +717,76 @@ export default function AdminProducts() {
                 </p>
               </div>
               <div className="flex items-center justify-between pt-1">
-                <Link
-                  href={`/admin/products/${product.id}`}
-                  className="rounded-lg bg-[#1f4b99] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#1b3f82]"
-                >
-                  Edit product
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/admin/products/${product.id}`}
+                    className="rounded-lg bg-[#1f4b99] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#1b3f82]"
+                  >
+                    Edit product
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => removeProduct(product)}
+                    disabled={actioningId === product.id}
+                    className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:border-rose-400 hover:bg-rose-50 disabled:opacity-60"
+                  >
+                    {actioningId === product.id ? "Removing..." : "Remove"}
+                  </button>
+                </div>
                 <span className="text-[11px] text-slate-400">
                   ID {product.id.slice(0, 6)}
                 </span>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {filteredManageProducts.length > 0 && totalManagePages > 1 && (
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => setManagePage((prev) => Math.max(1, prev - 1))}
+            disabled={currentManagePage === 1}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-[#1f4b99] disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          {visibleManagePages.map((page, idx) =>
+            page < 0 ? (
+              <span
+                key={`ellipsis-${idx}`}
+                className="px-1 text-xs font-semibold text-slate-400"
+              >
+                ...
+              </span>
+            ) : (
+              <button
+                key={`page-${page}`}
+                type="button"
+                onClick={() => setManagePage(page)}
+                className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                  page === currentManagePage
+                    ? "border-[#1f4b99] bg-[#1f4b99] text-white"
+                    : "border-slate-200 text-slate-700 hover:border-[#1f4b99]"
+                }`}
+              >
+                {page}
+              </button>
+            ),
+          )}
+
+          <button
+            type="button"
+            onClick={() =>
+              setManagePage((prev) => Math.min(totalManagePages, prev + 1))
+            }
+            disabled={currentManagePage === totalManagePages}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-[#1f4b99] disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

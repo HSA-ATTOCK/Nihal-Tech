@@ -6,6 +6,12 @@ import Button from "@/components/Button";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  DEFAULT_DELIVERY_OPTION,
+  DELIVERY_OPTIONS,
+  type DeliveryOptionCode,
+  getDeliveryOption,
+} from "@/lib/delivery";
 
 interface CartItem {
   id: string;
@@ -30,6 +36,8 @@ export default function Checkout() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [success, setSuccess] = useState<string | null>(null);
+  const [deliveryOptionCode, setDeliveryOptionCode] =
+    useState<DeliveryOptionCode>(DEFAULT_DELIVERY_OPTION.code);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -77,10 +85,13 @@ export default function Checkout() {
     }
   }, [session]);
 
-  const total = cart.reduce(
+  const productsSubtotal = cart.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0,
   );
+  const selectedDeliveryOption = getDeliveryOption(deliveryOptionCode);
+  const deliveryCharge = selectedDeliveryOption.price;
+  const total = productsSubtotal + deliveryCharge;
 
   const shipping = { name, email, phone, address };
 
@@ -114,6 +125,7 @@ export default function Checkout() {
       const res = await axios.post("/api/checkout", {
         method: "card",
         shipping,
+        deliveryOptionCode,
       });
       window.location.href = res.data.url;
     } catch (error) {
@@ -142,6 +154,7 @@ export default function Checkout() {
       const res = await axios.post("/api/checkout", {
         method: "paypal",
         shipping,
+        deliveryOptionCode,
       });
       window.location.href = res.data.url;
     } catch (error) {
@@ -172,6 +185,7 @@ export default function Checkout() {
       const res = await axios.post("/api/checkout", {
         method: "cod",
         shipping,
+        deliveryOptionCode,
       });
       setSuccess(res.data?.message || "Order confirmed for Cash on Delivery.");
       setCart([]);
@@ -306,6 +320,49 @@ export default function Checkout() {
                         placeholder="Street, city, postcode"
                       />
                     </label>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-700 mb-2">
+                        Delivery option
+                      </p>
+                      <div className="space-y-2">
+                        {DELIVERY_OPTIONS.map((option) => {
+                          const selected = deliveryOptionCode === option.code;
+                          return (
+                            <label
+                              key={option.code}
+                              className={`flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2 transition-colors ${
+                                selected
+                                  ? "border-[#1f4b99] bg-blue-50"
+                                  : "border-slate-200 bg-white hover:border-slate-300"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="radio"
+                                  name="delivery-option"
+                                  value={option.code}
+                                  checked={selected}
+                                  onChange={() =>
+                                    setDeliveryOptionCode(option.code)
+                                  }
+                                />
+                                <div>
+                                  <p className="text-sm font-semibold text-slate-900">
+                                    {option.label}
+                                  </p>
+                                  <p className="text-xs text-slate-600">
+                                    {option.eta}
+                                  </p>
+                                </div>
+                              </div>
+                              <p className="text-sm font-bold text-[#1f4b99]">
+                                £{option.price.toFixed(2)}
+                              </p>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
                     <div className="flex justify-between gap-3">
                       <Link
                         href="/cart"
@@ -357,8 +414,25 @@ export default function Checkout() {
                       </div>
                     </div>
                     <div className="flex justify-between items-center pt-4 border-t border-slate-200 mt-4">
+                      <span className="text-slate-900 text-sm font-semibold">
+                        Products subtotal
+                      </span>
+                      <span className="text-xl font-bold text-slate-900">
+                        £{productsSubtotal.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-slate-900 text-sm font-semibold">
+                        Delivery ({selectedDeliveryOption.label} -{" "}
+                        {selectedDeliveryOption.eta})
+                      </span>
+                      <span className="text-xl font-bold text-slate-900">
+                        £{deliveryCharge.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-200 mt-2">
                       <span className="text-slate-900 text-lg font-bold">
-                        Total
+                        Total to pay
                       </span>
                       <span className="text-3xl font-black text-[#1f4b99]">
                         £{total.toFixed(2)}
@@ -471,28 +545,28 @@ export default function Checkout() {
                             {/* Card brand badges */}
                             <div className="flex items-center gap-2 flex-wrap justify-center">
                               {/* Visa */}
-                              <span className="bg-white rounded px-2 py-[3px] flex items-center justify-center">
+                              <span className="bg-white rounded px-2 py-0.75 flex items-center justify-center">
                                 <span className="text-[#1a1f71] font-black italic text-sm tracking-wider leading-none">
                                   VISA
                                 </span>
                               </span>
 
                               {/* Mastercard */}
-                              <span className="bg-[#252525] rounded px-1.5 py-[3px] flex items-center gap-0.5">
-                                <span className="w-[18px] h-[18px] rounded-full bg-[#eb001b] block shrink-0" />
-                                <span className="w-[18px] h-[18px] rounded-full bg-[#f79e1b] block -ml-2.5 shrink-0 opacity-95" />
+                              <span className="bg-[#252525] rounded px-1.5 py-0.75 flex items-center gap-0.5">
+                                <span className="w-4.5 h-4.5 rounded-full bg-[#eb001b] block shrink-0" />
+                                <span className="w-4.5 h-4.5 rounded-full bg-[#f79e1b] block -ml-2.5 shrink-0 opacity-95" />
                                 <span className="text-white font-semibold text-[9px] ml-1 tracking-wide leading-none">
                                   Mastercard
                                 </span>
                               </span>
 
                               {/* Amex */}
-                              <span className="bg-[#007bc1] text-white rounded px-2 py-[3px] font-bold text-[10px] tracking-widest leading-none flex items-center">
+                              <span className="bg-[#007bc1] text-white rounded px-2 py-0.75 font-bold text-[10px] tracking-widest leading-none flex items-center">
                                 AMEX
                               </span>
 
                               {/* Maestro */}
-                              <span className="bg-[#0099df] text-white rounded px-2 py-[3px] font-semibold text-[10px] tracking-wide leading-none flex items-center">
+                              <span className="bg-[#0099df] text-white rounded px-2 py-0.75 font-semibold text-[10px] tracking-wide leading-none flex items-center">
                                 Maestro
                               </span>
                             </div>
@@ -678,13 +752,31 @@ export default function Checkout() {
                 </div>
               )}
               <div className="flex items-center justify-between border-t border-slate-200 pt-4">
-                <p className="text-sm text-slate-600">Total</p>
-                <p className="text-2xl font-black text-[#1f4b99]">
-                  £{total.toFixed(2)}
-                </p>
+                <div className="space-y-1 w-full">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-slate-600">Products subtotal</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      £{productsSubtotal.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-slate-600">Delivery</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      £{deliveryCharge.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-slate-200 pt-2 mt-2">
+                    <p className="text-sm text-slate-700 font-semibold">
+                      Total to pay
+                    </p>
+                    <p className="text-2xl font-black text-[#1f4b99]">
+                      £{total.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
               </div>
               <p className="text-xs text-slate-500 mt-2">
-                Taxes and shipping calculated at payment.
+                Delivery option is locked when you place the order.
               </p>
             </div>
           </div>

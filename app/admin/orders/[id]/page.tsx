@@ -64,12 +64,27 @@ export default async function AdminOrderDetail({
     ? (order.items as unknown as OrderItem[])
     : [];
 
+  const computedItemsTotal = items.reduce(
+    (sum, item) => sum + (item.price || 0) * Math.max(item.quantity || 0, 0),
+    0,
+  );
+  const itemsTotal =
+    order.itemsTotal > 0 ? order.itemsTotal : computedItemsTotal;
+  const deliveryPrice =
+    order.deliveryPrice > 0
+      ? order.deliveryPrice
+      : Math.max(order.total - itemsTotal, 0);
+  const deliveryOptionLabel = order.deliveryOptionLabel || "Standard delivery";
+
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4">
       <div className="mx-auto max-w-5xl">
         <AdminOrderDetailClient
           order={{
             id: order.id,
+            itemsTotal,
+            deliveryOptionLabel,
+            deliveryPrice,
             total: order.total,
             status: order.status,
             shippingName: order.shippingName,

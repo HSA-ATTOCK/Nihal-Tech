@@ -41,6 +41,8 @@ model Product {
   price          Float
   imageUrl       String
   stock          Int
+  isDeleted      Boolean           @default(false)
+  deletedAt      DateTime?
   imageUrls      String[]          @default([])
   category       String            @default("New Phones")
   variations     Json              @default("[]")
@@ -68,6 +70,10 @@ model RepairBooking {
 model Order {
   id               String          @id @default(uuid())
   userId           String
+  itemsTotal       Float           @default(0)
+  deliveryOptionCode String        @default("evri_standard_2_4")
+  deliveryOptionLabel String       @default("Evri standard service (2-4 days)")
+  deliveryPrice    Float           @default(2.89)
   total            Float
   createdAt        DateTime        @default(now())
   phone            String          @default("")
