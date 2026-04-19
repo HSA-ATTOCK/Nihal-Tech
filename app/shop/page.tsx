@@ -22,18 +22,14 @@ interface Product {
   buyOneGetOneFree?: boolean;
 }
 
-const categories = [
-  { key: "All", label: "All" },
-  { key: "New Phones", label: "New Phones" },
-  { key: "Phone Accessories", label: "Phone Accessories" },
-  { key: "Vape", label: "Vape" },
-  { key: "Computers/Laptops", label: "Computers/Laptops" },
-  { key: "Computer Accessories", label: "Computer Accessories" },
-];
+type CategoryOption = { key: string; label: string };
 
 function ShopContent() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([
+    { key: "All", label: "All" },
+  ]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("All");
@@ -52,6 +48,21 @@ function ShopContent() {
   const router = useRouter();
 
   useEffect(() => {
+    fetch("/api/categories")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: Array<{ name: string }>) => {
+        setCategories([
+          { key: "All", label: "All" },
+          ...data.map((category) => ({
+            key: category.name,
+            label: category.name,
+          })),
+        ]);
+      })
+      .catch(() => setCategories([{ key: "All", label: "All" }]));
+  }, []);
+
+  useEffect(() => {
     const categoryFromUrl = searchParams.get("category");
     if (!categoryFromUrl) return;
 
@@ -63,7 +74,7 @@ function ShopContent() {
     if (matchedCategory) {
       setActiveCategory(matchedCategory.key);
     }
-  }, [searchParams]);
+  }, [searchParams, categories]);
 
   useEffect(() => setCurrentPage(1), [search, activeCategory, products]);
 

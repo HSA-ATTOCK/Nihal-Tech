@@ -3,13 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-const categories = [
-  "New Phones",
-  "Phone Accessories",
-  "Vape",
-  "Computers/Laptops",
-  "Computer Accessories",
-];
+type Category = {
+  id: string;
+  name: string;
+};
 
 const primaryButton =
   "rounded-lg bg-[#1f4b99] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1b3f82] disabled:opacity-60";
@@ -272,10 +269,11 @@ export default function EditProductClient({
 }: {
   product: EditableProduct;
 }) {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [name, setName] = useState(product.name || "");
   const [price, setPrice] = useState(String(product.price ?? ""));
   const [stock, setStock] = useState(String(product.stock ?? ""));
-  const [category, setCategory] = useState(product.category || categories[0]);
+  const [category, setCategory] = useState(product.category || "");
   const [brand, setBrand] = useState(product.brand || "");
   const [buyOneGetOneFree, setBuyOneGetOneFree] = useState(
     product.buyOneGetOneFree ?? false,
@@ -307,6 +305,29 @@ export default function EditProductClient({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await fetch("/api/categories", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load categories");
+        const data: Category[] = await res.json();
+        setCategories(data);
+      } catch {
+        setCategories([]);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
+  const categoryOptions = useMemo(() => {
+    const next = [...categories];
+    if (category && !next.some((item) => item.name === category)) {
+      next.unshift({ id: `current-${category}`, name: category });
+    }
+    return next;
+  }, [categories, category]);
 
   useEffect(() => {
     const urls = newImages.map((file) => URL.createObjectURL(file));
@@ -494,9 +515,10 @@ export default function EditProductClient({
           onChange={(e) => setCategory(e.target.value)}
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
         >
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
+          <option value="">Uncategorized</option>
+          {categoryOptions.map((cat) => (
+            <option key={cat.id} value={cat.name}>
+              {cat.name}
             </option>
           ))}
         </select>

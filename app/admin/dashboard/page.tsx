@@ -8,6 +8,12 @@ const actions = [
     icon: "📦",
   },
   {
+    title: "Categories",
+    href: "/admin/categories",
+    desc: "Create and remove product categories",
+    icon: "🏷",
+  },
+  {
     title: "Repair Bookings",
     href: "/admin/repairs",
     desc: "View and update all repair requests",

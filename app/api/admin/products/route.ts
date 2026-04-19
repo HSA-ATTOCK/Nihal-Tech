@@ -12,6 +12,12 @@ type VariationInput = {
   options?: VariationOption[];
 };
 
+function normalizeCategory(value: unknown) {
+  if (typeof value !== "string") return null;
+  const next = value.trim();
+  return next || null;
+}
+
 // Helper function to process variations and upload images
 async function processVariations(variations: VariationInput[]) {
   if (!Array.isArray(variations)) return [];
@@ -64,7 +70,7 @@ export async function POST(req: Request) {
     description,
     price,
     stock,
-    category = "New Phones",
+    category,
     brand = "",
     buyOneGetOneFree = false,
   } = body;
@@ -99,7 +105,7 @@ export async function POST(req: Request) {
       description,
       price,
       stock,
-      category,
+      category: normalizeCategory(category),
       brand,
       buyOneGetOneFree,
       variations: processedVariations,
@@ -174,7 +180,10 @@ export async function PUT(req: Request) {
       description: body.description ?? existing.description,
       price: body.price ?? existing.price,
       stock: body.stock ?? existing.stock,
-      category: body.category ?? existing.category,
+      category:
+        body.category !== undefined
+          ? normalizeCategory(body.category)
+          : existing.category,
       brand: body.brand ?? existing.brand,
       buyOneGetOneFree:
         body.buyOneGetOneFree !== undefined

@@ -44,7 +44,7 @@ model Product {
   isDeleted      Boolean           @default(false)
   deletedAt      DateTime?
   imageUrls      String[]          @default([])
-  category       String            @default("New Phones")
+  category       String?
   variations     Json              @default("[]")
   brand          String?           @default("")
   /// whether the product should display a buy-one-get-one-free offer
@@ -54,6 +54,12 @@ model Product {
   recentlyViewed RecentlyViewed[]
   reviews        Review[]
   wishlist       WishlistItem[]
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
 }
 
 model RepairBooking {

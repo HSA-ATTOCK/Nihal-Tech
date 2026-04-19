@@ -3,13 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-const categories = [
-  "New Phones",
-  "Phone Accessories",
-  "Vape",
-  "Computers/Laptops",
-  "Computer Accessories",
-];
+type Category = {
+  id: string;
+  name: string;
+};
 
 type Product = {
   id: string;
@@ -247,9 +244,11 @@ function VariationFields({ values, onChange, idPrefix }: VariationFieldsProps) {
 export default function AdminProducts() {
   const [tab, setTab] = useState<"add" | "manage">("add");
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [productSearch, setProductSearch] = useState("");
   const [managePage, setManagePage] = useState(1);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [savingNew, setSavingNew] = useState(false);
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -259,7 +258,7 @@ export default function AdminProducts() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [stock, setStock] = useState("");
-  const [category, setCategory] = useState(categories[0]);
+  const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
   const [buyOneGetOneFree, setBuyOneGetOneFree] = useState(false);
   const [variations, setVariations] = useState<VariationInput[]>([
@@ -285,9 +284,33 @@ export default function AdminProducts() {
     }
   }, []);
 
+  const loadCategories = useCallback(async () => {
+    setLoadingCategories(true);
+    try {
+      const res = await fetch("/api/categories", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to load categories");
+      const data: Category[] = await res.json();
+      setCategories(data);
+    } catch {
+      setCategories([]);
+    } finally {
+      setLoadingCategories(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  useEffect(() => {
+    if (!category && categories.length > 0) {
+      setCategory(categories[0].name);
+    }
+  }, [category, categories]);
 
   useEffect(() => {
     setManagePage(1);
@@ -416,7 +439,7 @@ export default function AdminProducts() {
       setPrice("");
       setDescription("");
       setStock("");
-      setCategory(categories[0]);
+      setCategory("");
       setBrand("");
       setBuyOneGetOneFree(false);
       setVariations([{ ...emptyVariation }]);
@@ -541,14 +564,21 @@ export default function AdminProducts() {
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
+            disabled={loadingCategories}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
           >
+            <option value="">Uncategorized</option>
             {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
+              <option key={cat.id} value={cat.name}>
+                {cat.name}
               </option>
             ))}
           </select>
+          {!loadingCategories && categories.length === 0 ? (
+            <p className="text-xs text-slate-500">
+              No categories exist yet. Create one from the Categories page.
+            </p>
+          ) : null}
         </div>
 
         <textarea
