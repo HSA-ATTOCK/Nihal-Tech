@@ -1,6 +1,6 @@
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import FlashSaleStrip from "@/components/FlashSaleStrip";
+// import FlashSaleStrip from "@/components/FlashSaleStrip";
 import Footer from "@/components/Footer";
 import ChatWidget from "@/components/ChatWidget";
 import Providers from "./providers";
@@ -27,7 +27,7 @@ export default function RootLayout({
       <body className="text-slate-900">
         <Providers>
           <Navbar />
-          <FlashSaleStrip />
+          {/* <FlashSaleStrip /> */}
           <main className="min-h-screen">{children}</main>
           <Footer />
           <ChatWidget />
