@@ -42,6 +42,28 @@ function LoginContent() {
       console.log("📥 Result:", result);
 
       if (result?.error) {
+        try {
+          const statusRes = await fetch("/api/auth/verification-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email.trim() }),
+          });
+
+          const statusData = await statusRes.json().catch(() => ({}));
+          if (!statusRes.ok) {
+            throw new Error(statusData?.message || "Failed to check status");
+          }
+
+          if (statusData?.verified === false) {
+            router.push(
+              `/unverified?email=${encodeURIComponent(email.trim())}`,
+            );
+            return;
+          }
+        } catch {
+          // Fall through to the generic login error below.
+        }
+
         setError("Invalid email or password");
       } else {
         try {

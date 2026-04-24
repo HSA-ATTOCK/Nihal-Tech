@@ -29,7 +29,9 @@ export async function POST(req: Request) {
       data: { name, email, password: hashed, verificationToken: token },
     });
 
-    const verificationUrl = `${process.env.NEXTAUTH_URL}/verify/${token}`;
+    const baseUrl =
+      process.env.NEXTAUTH_URL?.replace(/\/$/, "") || new URL(req.url).origin;
+    const verificationUrl = new URL(`/verify/${token}`, baseUrl).toString();
 
     try {
       await transporter.sendMail({

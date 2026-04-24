@@ -63,19 +63,19 @@ function ShopContent() {
     const nextSort = searchParams.get("sort") || "default";
     const nextPage = Math.max(1, Number(searchParams.get("page") || "1") || 1);
 
-    if (search !== nextSearch) setSearch(nextSearch);
-    if (sortBy !== nextSort) setSortBy(nextSort);
-    if (currentPage !== nextPage) setCurrentPage(nextPage);
+    setSearch((prev) => (prev === nextSearch ? prev : nextSearch));
+    setSortBy((prev) => (prev === nextSort ? prev : nextSort));
+    setCurrentPage((prev) => (prev === nextPage ? prev : nextPage));
 
     const matchedCategory = categories.find(
       (category) => category.key.toLowerCase() === nextCategory.toLowerCase(),
     );
     const normalizedCategory = matchedCategory?.key || nextCategory;
 
-    if (activeCategory !== normalizedCategory) {
-      setActiveCategory(normalizedCategory);
-    }
-  }, [activeCategory, categories, currentPage, search, searchParams, sortBy]);
+    setActiveCategory((prev) =>
+      prev === normalizedCategory ? prev : normalizedCategory,
+    );
+  }, [categories, searchParams]);
 
   useEffect(() => {
     const nextUrl = buildInternalHref(pathname, {
@@ -305,8 +305,10 @@ function ShopContent() {
               <button
                 key={c.key}
                 onClick={() => {
-                  setActiveCategory(c.key);
-                  setCurrentPage(1);
+                  if (activeCategory !== c.key) {
+                    setActiveCategory(c.key);
+                    setCurrentPage(1);
+                  }
                 }}
                 className={`px-4 py-2 rounded-full border text-sm transition-all ${active ? "bg-[#1f4b99] border-[#1f4b99] text-white" : "bg-white border-slate-200 text-slate-700 hover:border-[#1f4b99]"}`}
               >

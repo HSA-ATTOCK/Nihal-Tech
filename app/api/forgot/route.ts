@@ -33,7 +33,9 @@ export async function POST(req: Request) {
     data: { resetToken: token },
   });
 
-  const resetUrl = `${process.env.NEXTAUTH_URL}/reset/${token}`;
+  const baseUrl =
+    process.env.NEXTAUTH_URL?.replace(/\/$/, "") || new URL(req.url).origin;
+  const resetUrl = new URL(`/reset/${token}`, baseUrl).toString();
 
   try {
     await transporter.sendMail({

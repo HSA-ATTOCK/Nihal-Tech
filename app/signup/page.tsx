@@ -68,7 +68,9 @@ export default function Signup() {
       });
 
       if (response.status === 200) {
-        setSuccess("Check your email to verify your account.");
+        setSuccess(
+          "Check your email to verify your account. Or log in to get the verification link again.",
+        );
         setName("");
         setEmail("");
         setPassword("");
