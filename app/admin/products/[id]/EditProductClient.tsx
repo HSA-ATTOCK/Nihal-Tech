@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type Category = {
   id: string;
@@ -25,6 +26,8 @@ function filesToBase64(files: File[]): Promise<string[]> {
 }
 
 import { RawOption } from "@/lib/types";
+import { resolveReturnHref } from "@/lib/navigation";
+import PriceDisplay from "@/components/PriceDisplay";
 
 type OptionInput = {
   value: string;
@@ -255,6 +258,8 @@ export type EditableProduct = {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number | null;
+  isDiscounted?: boolean | null;
   stock: number;
   category?: string | null;
   brand?: string | null;
@@ -269,6 +274,7 @@ export default function EditProductClient({
 }: {
   product: EditableProduct;
 }) {
+  const searchParams = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [name, setName] = useState(product.name || "");
   const [price, setPrice] = useState(String(product.price ?? ""));
@@ -277,6 +283,12 @@ export default function EditProductClient({
   const [brand, setBrand] = useState(product.brand || "");
   const [buyOneGetOneFree, setBuyOneGetOneFree] = useState(
     product.buyOneGetOneFree ?? false,
+  );
+  const [isDiscounted, setIsDiscounted] = useState(
+    product.isDiscounted ?? false,
+  );
+  const [originalPrice, setOriginalPrice] = useState(
+    product.originalPrice ? String(product.originalPrice) : "",
   );
   const [description, setDescription] = useState(product.description || "");
   const [variations, setVariations] = useState<VariationInput[]>(
@@ -328,6 +340,17 @@ export default function EditProductClient({
     }
     return next;
   }, [categories, category]);
+  const returnHref = resolveReturnHref(
+    searchParams.get("returnTo"),
+    "/admin/products?tab=manage",
+  );
+
+  const discountPreview = useMemo(() => {
+    const sale = Number(price);
+    const before = Number(originalPrice);
+    if (!isDiscounted || !sale || !before || before <= sale) return null;
+    return Math.round(((before - sale) / before) * 100);
+  }, [isDiscounted, originalPrice, price]);
 
   useEffect(() => {
     const urls = newImages.map((file) => URL.createObjectURL(file));
@@ -353,6 +376,15 @@ export default function EditProductClient({
     if (!name.trim() || !price || !stock) {
       setError("Name, price, and stock are required");
       return;
+    }
+
+    if (isDiscounted) {
+      const sale = Number(price);
+      const before = Number(originalPrice);
+      if (!before || before <= sale) {
+        setError("Original price must be higher than the discounted price");
+        return;
+      }
     }
 
     if (!existingImages.length && !newImages.length) {
@@ -408,6 +440,8 @@ export default function EditProductClient({
         id: product.id,
         name: name.trim(),
         price: Number(price),
+        originalPrice: isDiscounted ? Number(originalPrice) : null,
+        isDiscounted,
         stock: Number(stock),
         category,
         brand: brand.trim(),
@@ -451,12 +485,25 @@ export default function EditProductClient({
           <h1 className="text-2xl font-bold text-slate-900">{product.name}</h1>
           <p className="text-xs text-slate-500">ID: {product.id}</p>
         </div>
-        <Link
-          href="/admin/products"
-          className="text-sm font-semibold text-[#1f4b99] hover:text-[#1b3f82]"
-        >
-          ← Back to products
-        </Link>
+        <div className="space-y-2 text-right">
+          <Link
+            href={returnHref}
+            className="text-sm font-semibold text-[#1f4b99] hover:text-[#1b3f82]"
+          >
+            ← Back to products
+          </Link>
+          <PriceDisplay
+            price={Number(price) || product.price}
+            originalPrice={
+              isDiscounted ? Number(originalPrice) : product.originalPrice
+            }
+            isDiscounted={isDiscounted}
+            containerClassName="justify-end"
+            saleClassName="text-sm font-semibold text-slate-700"
+            originalClassName="text-[11px]"
+            badgeClassName="text-[10px]"
+          />
+        </div>
       </div>
 
       {message ? (
@@ -492,12 +539,40 @@ export default function EditProductClient({
           />
           Buy one get one free
         </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={isDiscounted}
+            onChange={(e) => setIsDiscounted(e.target.checked)}
+            className="h-4 w-4 rounded border-slate-300 text-[#1f4b99] focus:ring-[#1f4b99]"
+          />
+          Discounted product
+        </label>
         <input
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          placeholder="Price"
+          placeholder={isDiscounted ? "Discounted price" : "Price"}
           className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
         />
+        {isDiscounted ? (
+          <div className="space-y-2">
+            <input
+              value={originalPrice}
+              onChange={(e) => setOriginalPrice(e.target.value)}
+              placeholder="Before price"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
+            />
+            {discountPreview !== null ? (
+              <p className="text-xs font-semibold text-rose-600">
+                Auto discount: -{discountPreview}%
+              </p>
+            ) : (
+              <p className="text-xs text-slate-500">
+                Enter a higher before price to calculate the discount.
+              </p>
+            )}
+          </div>
+        ) : null}
         {typeof minVariationPrice === "number" && (
           <p className="text-xs text-slate-500 mt-1">
             Displayed price will default to the lowest option price: £

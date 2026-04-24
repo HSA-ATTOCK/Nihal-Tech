@@ -2,13 +2,18 @@
 
 import Link from "next/link";
 
-export default function FlashSaleStrip() {
-  const saleText =
-    "🔥 FLASH SALE! Get up to 50% OFF on all vape products! Limited time offer! Don't miss out! ";
+interface FlashSaleStripProps {
+  href?: string;
+  saleText?: string;
+}
 
+export default function FlashSaleStrip({
+  href = "/shop?category=Vape",
+  saleText = "🔥 FLASH SALE! Get up to 50% OFF on all vape products! Limited time offer! Don't miss out! ",
+}: FlashSaleStripProps) {
   return (
-    <Link href="/shop?category=Vape">
-      <div className="w-full bg-gradient-to-r from-red-600 to-orange-600 py-3 cursor-pointer hover:from-red-700 hover:to-orange-700 transition-all duration-300 overflow-hidden">
+    <Link href={href}>
+      <div className="w-full bg-linear-to-r from-red-600 to-orange-600 py-3 cursor-pointer hover:from-red-700 hover:to-orange-700 transition-all duration-300 overflow-hidden">
         <div className="marquee-track">
           <div className="marquee-group text-white font-bold text-sm md:text-base">
             <span>{saleText}</span>

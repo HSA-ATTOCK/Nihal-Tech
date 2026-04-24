@@ -63,6 +63,8 @@ export default async function WishlistPage() {
         id: item.product.id,
         name: item.product.name,
         price: item.product.price,
+        originalPrice: item.product.originalPrice,
+        isDiscounted: item.product.isDiscounted,
         imageUrl: item.product.imageUrl,
         imageUrls: item.product.imageUrls,
       },

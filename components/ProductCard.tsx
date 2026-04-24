@@ -2,11 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import Button from "./Button";
 import { RawOption } from "@/lib/types";
+import { buildInternalHref } from "@/lib/navigation";
+import PriceDisplay from "./PriceDisplay";
 
 interface Product {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number | null;
+  isDiscounted?: boolean | null;
   imageUrl?: string;
   imageUrls?: string[];
   variations?: Array<{ name: string; options?: RawOption[] }>;
@@ -16,11 +20,15 @@ interface Product {
 interface ProductCardProps {
   product: Product;
   onAddToCart?: () => void;
+  returnTo?: string;
+  anchorId?: string;
 }
 
 export default function ProductCard({
   product,
   onAddToCart,
+  returnTo,
+  anchorId,
 }: ProductCardProps) {
   const fallback =
     "data:image/svg+xml;utf8," +
@@ -42,16 +50,23 @@ export default function ProductCard({
   };
 
   const displayPrice = computeDisplayPrice();
+  const productHref = buildInternalHref(`/product/${product.id}`, {
+    returnTo,
+  });
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-5 group flex flex-col h-full">
-      <Link href={`/product/${product.id}`} className="block flex-1">
+    <div
+      id={anchorId}
+      className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-5 group flex flex-col h-full"
+    >
+      <Link href={productHref} className="block flex-1">
         <div className="relative overflow-hidden rounded-xl mb-4 bg-slate-50 p-4 border border-slate-100">
           <Image
             src={primaryImage}
             alt={product.name}
             width={192}
             height={192}
+            unoptimized
             className="h-48 mx-auto object-contain group-hover:scale-105 transition-transform duration-300"
           />
         </div>
@@ -61,14 +76,18 @@ export default function ProductCard({
       </Link>
 
       <div className="mt-4 flex flex-col gap-3">
-        <p className="text-[#1f4b99] font-semibold text-xl relative">
-          £{displayPrice.toFixed(2)}
-          {product.buyOneGetOneFree && (
-            <span className="ml-2 inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
-              Buy 1 Get 1 FREE
-            </span>
-          )}
-        </p>
+        <PriceDisplay
+          price={displayPrice}
+          originalPrice={product.originalPrice}
+          isDiscounted={product.isDiscounted}
+          containerClassName="items-end"
+          saleClassName="text-[#1f4b99] font-semibold text-xl relative"
+        />
+        {product.buyOneGetOneFree ? (
+          <span className="inline-block w-fit rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
+            Buy 1 Get 1 FREE
+          </span>
+        ) : null}
         <Button onClick={onAddToCart} className="w-full mt-auto text-sm">
           Add to Cart
         </Button>

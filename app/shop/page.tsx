@@ -4,14 +4,17 @@ import Container from "@/components/Container";
 import Input from "@/components/Input";
 import ProductCard from "@/components/ProductCard";
 import { useSession } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { RawOption } from "@/lib/types";
+import { buildInternalHref } from "@/lib/navigation";
 
 interface Product {
   id: string;
   name: string;
   description: string;
   price: number;
+  originalPrice?: number | null;
+  isDiscounted?: boolean | null;
   imageUrl?: string;
   imageUrls?: string[];
   category?: string;
@@ -26,14 +29,19 @@ type CategoryOption = { key: string; label: string };
 
 function ShopContent() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([
     { key: "All", label: "All" },
   ]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("All");
-  const [sortBy, setSortBy] = useState<string>("default");
+  const [search, setSearch] = useState(searchParams.get("q") || "");
+  const [activeCategory, setActiveCategory] = useState<string>(
+    searchParams.get("category") || "All",
+  );
+  const [sortBy, setSortBy] = useState<string>(
+    searchParams.get("sort") || "default",
+  );
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -42,10 +50,56 @@ function ShopContent() {
   >({});
   const [quantity, setQuantity] = useState(1);
   const [modalPrice, setModalPrice] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState<number>(
+    Math.max(1, Number(searchParams.get("page") || "1") || 1),
+  );
   const pageSize = 12;
   const { status } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    const nextSearch = searchParams.get("q") || "";
+    const nextCategory = searchParams.get("category") || "All";
+    const nextSort = searchParams.get("sort") || "default";
+    const nextPage = Math.max(1, Number(searchParams.get("page") || "1") || 1);
+
+    if (search !== nextSearch) setSearch(nextSearch);
+    if (sortBy !== nextSort) setSortBy(nextSort);
+    if (currentPage !== nextPage) setCurrentPage(nextPage);
+
+    const matchedCategory = categories.find(
+      (category) => category.key.toLowerCase() === nextCategory.toLowerCase(),
+    );
+    const normalizedCategory = matchedCategory?.key || nextCategory;
+
+    if (activeCategory !== normalizedCategory) {
+      setActiveCategory(normalizedCategory);
+    }
+  }, [activeCategory, categories, currentPage, search, searchParams, sortBy]);
+
+  useEffect(() => {
+    const nextUrl = buildInternalHref(pathname, {
+      q: search.trim() || undefined,
+      category: activeCategory !== "All" ? activeCategory : undefined,
+      sort: sortBy !== "default" ? sortBy : undefined,
+      page: currentPage > 1 ? currentPage : undefined,
+    });
+    const currentUrl = searchParams.toString()
+      ? `${pathname}?${searchParams.toString()}`
+      : pathname;
+
+    if (nextUrl !== currentUrl) {
+      router.replace(nextUrl, { scroll: false });
+    }
+  }, [
+    activeCategory,
+    currentPage,
+    pathname,
+    router,
+    search,
+    searchParams,
+    sortBy,
+  ]);
 
   useEffect(() => {
     fetch("/api/categories")
@@ -61,22 +115,6 @@ function ShopContent() {
       })
       .catch(() => setCategories([{ key: "All", label: "All" }]));
   }, []);
-
-  useEffect(() => {
-    const categoryFromUrl = searchParams.get("category");
-    if (!categoryFromUrl) return;
-
-    const normalized = categoryFromUrl.toLowerCase();
-    const matchedCategory = categories.find(
-      (category) => category.key.toLowerCase() === normalized,
-    );
-
-    if (matchedCategory) {
-      setActiveCategory(matchedCategory.key);
-    }
-  }, [searchParams, categories]);
-
-  useEffect(() => setCurrentPage(1), [search, activeCategory, products]);
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -137,6 +175,15 @@ function ShopContent() {
   const modalAllSelected = (selectedProduct?.variations || []).every(
     (v) => selectedVariations[v.name],
   );
+  const currentShopReturnTo = buildInternalHref(pathname, {
+    q: search.trim() || undefined,
+    category: activeCategory !== "All" ? activeCategory : undefined,
+    sort: sortBy !== "default" ? sortBy : undefined,
+    page: currentPage > 1 ? currentPage : undefined,
+  });
+
+  const buildShopReturnToWithAnchor = (productId: string) =>
+    `${currentShopReturnTo}#product-${productId}`;
 
   useEffect(() => {
     // Ensure we scroll to top whenever the page changes (pagination)
@@ -144,6 +191,19 @@ function ShopContent() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [currentPage]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const hash = window.location.hash;
+    if (!hash.startsWith("#product-")) return;
+
+    const targetId = decodeURIComponent(hash.slice(1));
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [currentPage, sorted]);
 
   const openModal = (product: Product) => {
     setSelectedProduct(product);
@@ -230,7 +290,10 @@ function ShopContent() {
           <Input
             placeholder="Search for phones and accessories..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             className="pl-12 text-lg"
           />
         </div>
@@ -241,7 +304,10 @@ function ShopContent() {
             return (
               <button
                 key={c.key}
-                onClick={() => setActiveCategory(c.key)}
+                onClick={() => {
+                  setActiveCategory(c.key);
+                  setCurrentPage(1);
+                }}
                 className={`px-4 py-2 rounded-full border text-sm transition-all ${active ? "bg-[#1f4b99] border-[#1f4b99] text-white" : "bg-white border-slate-200 text-slate-700 hover:border-[#1f4b99]"}`}
               >
                 {c.label}
@@ -366,6 +432,8 @@ function ShopContent() {
                   <ProductCard
                     key={p.id}
                     product={p}
+                    anchorId={`product-${p.id}`}
+                    returnTo={buildShopReturnToWithAnchor(p.id)}
                     onAddToCart={() => openModal(p)}
                   />
                 ))}

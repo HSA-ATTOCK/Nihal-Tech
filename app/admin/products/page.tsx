@@ -1,7 +1,12 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { buildInternalHref } from "@/lib/navigation";
+import PriceDisplay from "@/components/PriceDisplay";
 
 type Category = {
   id: string;
@@ -12,6 +17,8 @@ type Product = {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number | null;
+  isDiscounted?: boolean | null;
   stock: number;
   category?: string | null;
   description?: string | null;
@@ -242,17 +249,49 @@ function VariationFields({ values, onChange, idPrefix }: VariationFieldsProps) {
 }
 
 export default function AdminProducts() {
-  const [tab, setTab] = useState<"add" | "manage">("add");
+  const pathname = usePathname();
+  const router = useRouter();
+  const readQuery = (
+    search: string,
+  ): {
+    nextTab: "add" | "manage";
+    nextSearch: string;
+    nextPage: number;
+    hasPageParam: boolean;
+  } => {
+    const params = new URLSearchParams(search);
+    const nextTab = params.get("tab") === "add" ? "add" : "manage";
+    const nextSearch = params.get("q") || "";
+    const nextPage = Math.max(1, Number(params.get("page") || "1") || 1);
+    return {
+      nextTab,
+      nextSearch,
+      nextPage,
+      hasPageParam: params.has("page"),
+    };
+  };
+
+  const initialQuery =
+    typeof window !== "undefined" ? readQuery(window.location.search) : null;
+
+  const [tab, setTab] = useState<"add" | "manage">(
+    initialQuery?.nextTab ?? "manage",
+  );
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [productSearch, setProductSearch] = useState("");
-  const [managePage, setManagePage] = useState(1);
+  const [productSearch, setProductSearch] = useState(
+    initialQuery?.nextSearch ?? "",
+  );
+  const [managePage, setManagePage] = useState<number>(
+    initialQuery?.nextPage ?? 1,
+  );
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [savingNew, setSavingNew] = useState(false);
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const lastManagePageRef = useRef<number>(initialQuery?.nextPage ?? 1);
 
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -261,6 +300,8 @@ export default function AdminProducts() {
   const [category, setCategory] = useState("");
   const [brand, setBrand] = useState("");
   const [buyOneGetOneFree, setBuyOneGetOneFree] = useState(false);
+  const [isDiscounted, setIsDiscounted] = useState(false);
+  const [originalPrice, setOriginalPrice] = useState("");
   const [variations, setVariations] = useState<VariationInput[]>([
     { ...emptyVariation },
   ]);
@@ -299,6 +340,48 @@ export default function AdminProducts() {
   }, []);
 
   useEffect(() => {
+    const syncFromLocation = () => {
+      const { nextTab, nextSearch, nextPage, hasPageParam } = readQuery(
+        window.location.search,
+      );
+      const restoredPage =
+        nextTab === "manage" && !hasPageParam && lastManagePageRef.current > 1
+          ? lastManagePageRef.current
+          : nextPage;
+
+      if (tab !== nextTab) setTab(nextTab);
+      if (productSearch !== nextSearch) setProductSearch(nextSearch);
+      if (managePage !== restoredPage) setManagePage(restoredPage);
+    };
+
+    syncFromLocation();
+    window.addEventListener("popstate", syncFromLocation);
+    return () => window.removeEventListener("popstate", syncFromLocation);
+  }, [managePage, productSearch, tab]);
+
+  useEffect(() => {
+    if (tab === "manage" && managePage > 1) {
+      lastManagePageRef.current = managePage;
+    }
+  }, [managePage, tab]);
+
+  useEffect(() => {
+    const nextUrl = buildInternalHref(pathname, {
+      tab,
+      q: tab === "manage" ? productSearch.trim() || undefined : undefined,
+      page: tab === "manage" && managePage > 1 ? managePage : undefined,
+    });
+    const currentUrl =
+      typeof window !== "undefined" && window.location.search
+        ? `${pathname}${window.location.search}`
+        : pathname;
+
+    if (nextUrl !== currentUrl) {
+      router.replace(nextUrl, { scroll: false });
+    }
+  }, [managePage, pathname, productSearch, router, tab]);
+
+  useEffect(() => {
     loadProducts();
   }, [loadProducts]);
 
@@ -311,10 +394,6 @@ export default function AdminProducts() {
       setCategory(categories[0].name);
     }
   }, [category, categories]);
-
-  useEffect(() => {
-    setManagePage(1);
-  }, [productSearch, products.length]);
 
   const removeProduct = async (product: Product) => {
     const ok = window.confirm(
@@ -362,10 +441,26 @@ export default function AdminProducts() {
     return undefined;
   }, [variations]);
 
+  const discountPreview = useMemo(() => {
+    const sale = Number(price);
+    const before = Number(originalPrice);
+    if (!isDiscounted || !sale || !before || before <= sale) return null;
+    return Math.round(((before - sale) / before) * 100);
+  }, [isDiscounted, originalPrice, price]);
+
   const upload = async () => {
     if (!name.trim() || !price || !stock || images.length === 0) {
       setError("Name, price, stock, and at least one image are required");
       return;
+    }
+
+    if (isDiscounted) {
+      const sale = Number(price);
+      const before = Number(originalPrice);
+      if (!before || before <= sale) {
+        setError("Original price must be higher than the discounted price");
+        return;
+      }
     }
 
     setSavingNew(true);
@@ -418,6 +513,8 @@ export default function AdminProducts() {
         name: name.trim(),
         description: description.trim(),
         price: Number(price),
+        originalPrice: isDiscounted ? Number(originalPrice) : null,
+        isDiscounted,
         stock: Number(stock),
         category,
         brand: brand.trim(),
@@ -442,6 +539,8 @@ export default function AdminProducts() {
       setCategory("");
       setBrand("");
       setBuyOneGetOneFree(false);
+      setIsDiscounted(false);
+      setOriginalPrice("");
       setVariations([{ ...emptyVariation }]);
       setImages([]);
       setImageInputKey((k) => k + 1);
@@ -518,6 +617,29 @@ export default function AdminProducts() {
     ];
   }, [currentManagePage, totalManagePages]);
 
+  const currentManageReturnTo = buildInternalHref("/admin/products", {
+    tab: "manage",
+    q: productSearch.trim() || undefined,
+    page: currentManagePage,
+  });
+
+  const buildManageReturnToWithAnchor = (productId: string) =>
+    `${currentManageReturnTo}#product-${productId}`;
+
+  useEffect(() => {
+    if (tab !== "manage") return;
+    if (typeof window === "undefined") return;
+
+    const hash = window.location.hash;
+    if (!hash.startsWith("#product-")) return;
+
+    const targetId = decodeURIComponent(hash.slice(1));
+    const target = document.getElementById(targetId);
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [tab, currentManagePage, paginatedManageProducts]);
+
   const addTab = (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -543,12 +665,40 @@ export default function AdminProducts() {
             />
             Buy one get one free
           </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={isDiscounted}
+              onChange={(e) => setIsDiscounted(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-[#1f4b99] focus:ring-[#1f4b99]"
+            />
+            Discounted product
+          </label>
           <input
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            placeholder="Price"
+            placeholder={isDiscounted ? "Discounted price" : "Price"}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
           />
+          {isDiscounted ? (
+            <div className="space-y-2">
+              <input
+                value={originalPrice}
+                onChange={(e) => setOriginalPrice(e.target.value)}
+                placeholder="Before price"
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:border-[#1f4b99] focus:outline-none"
+              />
+              {discountPreview !== null ? (
+                <p className="text-xs font-semibold text-rose-600">
+                  Auto discount: -{discountPreview}%
+                </p>
+              ) : (
+                <p className="text-xs text-slate-500">
+                  Enter a higher before price to calculate the discount.
+                </p>
+              )}
+            </div>
+          ) : null}
           {typeof minVariationPrice === "number" && (
             <p className="text-xs text-slate-500 mt-1">
               Displayed price will default to the lowest option price: £
@@ -681,7 +831,9 @@ export default function AdminProducts() {
         <p className="text-sm font-semibold text-slate-800">Products</p>
         <div className="flex items-center gap-3">
           <Link
-            href="/admin/products/recycle-bin"
+            href={buildInternalHref("/admin/products/recycle-bin", {
+              returnTo: currentManageReturnTo,
+            })}
             className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 transition hover:bg-amber-100"
           >
             Open recycle bin
@@ -696,7 +848,10 @@ export default function AdminProducts() {
         <div className="w-full md:max-w-md">
           <input
             value={productSearch}
-            onChange={(e) => setProductSearch(e.target.value)}
+            onChange={(e) => {
+              setProductSearch(e.target.value);
+              setManagePage(1);
+            }}
             placeholder="Search product by name, category, description or id"
             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#1f4b99] focus:outline-none"
           />
@@ -716,6 +871,7 @@ export default function AdminProducts() {
           {paginatedManageProducts.map((product) => (
             <div
               key={product.id}
+              id={`product-${product.id}`}
               className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
             >
               {product.imageUrls?.[0] ? (
@@ -734,14 +890,21 @@ export default function AdminProducts() {
               )}
               <div className="space-y-1">
                 <p className="font-semibold text-slate-900">{product.name}</p>
-                <p className="text-sm text-slate-600">
-                  £{product.price} • Stock {product.stock}
-                  {product.buyOneGetOneFree ? (
-                    <span className="ml-2 inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
-                      BOGO
-                    </span>
-                  ) : null}
-                </p>
+                <PriceDisplay
+                  price={product.price}
+                  originalPrice={product.originalPrice}
+                  isDiscounted={product.isDiscounted}
+                  containerClassName="items-baseline"
+                  saleClassName="text-sm font-semibold text-slate-600"
+                  originalClassName="text-[11px]"
+                  badgeClassName="text-[10px]"
+                />
+                <p className="text-xs text-slate-500">Stock {product.stock}</p>
+                {product.buyOneGetOneFree ? (
+                  <span className="inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
+                    BOGO
+                  </span>
+                ) : null}
                 <p className="text-xs text-slate-500">
                   {product.category || "Uncategorized"}
                 </p>
@@ -749,7 +912,9 @@ export default function AdminProducts() {
               <div className="flex items-center justify-between pt-1">
                 <div className="flex items-center gap-2">
                   <Link
-                    href={`/admin/products/${product.id}`}
+                    href={buildInternalHref(`/admin/products/${product.id}`, {
+                      returnTo: buildManageReturnToWithAnchor(product.id),
+                    })}
                     className="rounded-lg bg-[#1f4b99] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#1b3f82]"
                   >
                     Edit product

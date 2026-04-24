@@ -2,6 +2,9 @@
 
 import Container from "@/components/Container";
 import Button from "@/components/Button";
+import FlashSaleStrip from "@/components/FlashSaleStrip";
+import { buildInternalHref } from "@/lib/navigation";
+import PriceDisplay from "@/components/PriceDisplay";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -10,6 +13,8 @@ interface Product {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number | null;
+  isDiscounted?: boolean | null;
   imageUrl?: string;
   imageUrls?: string[];
   buyOneGetOneFree?: boolean;
@@ -38,6 +43,11 @@ export default function Home() {
   }, []);
   return (
     <div className="pb-16">
+      <FlashSaleStrip
+        href="/shop?category=Kids%20Section"
+        saleText="🎉 KIDS SECTION DEALS! Special discount on kids products available now! Shop family picks before they sell out! "
+      />
+
       {/* Banner Section */}
       <div className="w-full bg-slate-50 border-b border-slate-200">
         <div className="relative w-full h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px] xl:h-[500px]">
@@ -414,7 +424,9 @@ export default function Home() {
               {featuredProducts.map((product) => (
                 <Link
                   key={product.id}
-                  href={`/product/${product.id}`}
+                  href={buildInternalHref(`/product/${product.id}`, {
+                    returnTo: "/",
+                  })}
                   className="block bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all"
                   aria-label={`View ${product.name}`}
                 >
@@ -444,9 +456,14 @@ export default function Home() {
                     >
                       {product.name}
                     </h4>
-                    <p className="text-[#1f4b99] font-semibold text-sm mt-1">
-                      £{product.price.toFixed(2)}
-                    </p>
+                    <PriceDisplay
+                      price={product.price}
+                      originalPrice={product.originalPrice}
+                      isDiscounted={product.isDiscounted}
+                      containerClassName="mt-1 items-baseline gap-x-2 gap-y-1"
+                      saleClassName="text-[#1f4b99] font-semibold text-sm"
+                      originalClassName="text-[11px]"
+                    />
                   </div>
                 </Link>
               ))}

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { ensureProductDiscountColumns } from "@/lib/productSchemaCompat";
 
 export const dynamic = "force-dynamic";
 
@@ -6,6 +7,8 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  await ensureProductDiscountColumns();
+
   const { id } = await params;
 
   if (!id) {

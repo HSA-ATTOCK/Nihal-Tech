@@ -23,6 +23,8 @@ export default async function ProductEditPage({
     id: product.id,
     name: product.name,
     price: Number(product.price),
+    originalPrice: product.originalPrice,
+    isDiscounted: product.isDiscounted,
     stock: Number(product.stock),
     category: product.category,
     brand: product.brand,

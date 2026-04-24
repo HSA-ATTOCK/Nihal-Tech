@@ -39,6 +39,7 @@ model Product {
   name           String
   description    String
   price          Float
+  originalPrice  Float?
   imageUrl       String
   stock          Int
   isDeleted      Boolean           @default(false)
@@ -49,6 +50,7 @@ model Product {
   brand          String?           @default("")
   /// whether the product should display a buy-one-get-one-free offer
   buyOneGetOneFree Boolean           @default(false)
+  isDiscounted   Boolean           @default(false)
   cartItems      CartItem[]
   questions      ProductQuestion[]
   recentlyViewed RecentlyViewed[]

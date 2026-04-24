@@ -6,13 +6,23 @@ import { useSession, signOut } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
-function NavLink({ href, label }: { href: string; label: string }) {
+function NavLink({
+  href,
+  label,
+  prefetch,
+}: {
+  href: string;
+  label: string;
+  prefetch?: boolean;
+}) {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const hrefPath = href.split("?")[0];
+  const isActive = pathname === hrefPath;
 
   return (
     <Link
       href={href}
+      prefetch={prefetch}
       className="text-slate-700 hover:text-slate-900 transition-colors relative group"
     >
       {label}
@@ -139,7 +149,7 @@ export default function Navbar() {
 
   const adminLinks = [
     { href: "/admin/dashboard", label: "Dashboard" },
-    { href: "/admin/products", label: "Products" },
+    { href: "/admin/products?tab=manage", label: "Products" },
     { href: "/admin/repairs", label: "Repairs" },
     { href: "/admin/orders", label: "Orders" },
     { href: "/admin/users", label: "Users" },
@@ -167,7 +177,10 @@ export default function Navbar() {
     <>
       <nav className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
-          <Link href={isAdminRoute ? "/admin" : "/"}>
+          <Link
+            href={isAdminRoute ? "/admin/dashboard" : "/"}
+            prefetch={isAdminRoute ? false : undefined}
+          >
             <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <div className="relative h-8 sm:h-10 w-8 sm:w-10">
                 <Image
@@ -191,7 +204,11 @@ export default function Navbar() {
               const isCart = !isAdminRoute && link.href === "/cart";
               return (
                 <div key={link.href} className="relative">
-                  <NavLink href={link.href} label={link.label} />
+                  <NavLink
+                    href={link.href}
+                    label={link.label}
+                    prefetch={isAdminRoute ? false : undefined}
+                  />
                   {isCart && cartCount > 0 && (
                     <span className="absolute -top-2 -right-3 min-w-5 h-5 px-1 rounded-full bg-[#1f4b99] text-white text-[10px] leading-5 font-bold text-center">
                       {cartCount > 99 ? "99+" : cartCount}
@@ -252,6 +269,7 @@ export default function Navbar() {
                       {isAdminRoute ? (
                         <Link
                           href="/admin/questions"
+                          prefetch={false}
                           className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                           onClick={() => setOpen(false)}
                         >
@@ -262,6 +280,7 @@ export default function Navbar() {
                           <Link
                             key={item.href}
                             href={item.href}
+                            prefetch={isAdminRoute ? false : undefined}
                             className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
                             onClick={() => setOpen(false)}
                           >
@@ -354,6 +373,7 @@ export default function Navbar() {
                       {isAdminRoute ? (
                         <Link
                           href="/admin/questions"
+                          prefetch={false}
                           className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
                           onClick={() => setOpen(false)}
                         >
@@ -364,6 +384,7 @@ export default function Navbar() {
                           <Link
                             key={item.href}
                             href={item.href}
+                            prefetch={isAdminRoute ? false : undefined}
                             className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
                             onClick={() => setOpen(false)}
                           >
@@ -424,6 +445,7 @@ export default function Navbar() {
                       <Link
                         key={link.href}
                         href={link.href}
+                        prefetch={isAdminRoute ? false : undefined}
                         className="flex items-center justify-between px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-md"
                         onClick={() => setMobileMenuOpen(false)}
                       >

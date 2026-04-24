@@ -1,6 +1,7 @@
 import cloudinary from "@/lib/cloudinary";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { ensureProductDiscountColumns } from "@/lib/productSchemaCompat";
 import { NextRequest } from "next/server";
 
 type VariationOption =
@@ -12,10 +13,81 @@ type VariationInput = {
   options?: VariationOption[];
 };
 
+type CloudinaryUploadResult = {
+  secure_url: string;
+};
+
+type AdminProductBody = {
+  id?: string;
+  name?: string;
+  description?: string;
+  stock?: number;
+  category?: string | null;
+  brand?: string;
+  buyOneGetOneFree?: boolean;
+  images?: unknown;
+  image?: unknown;
+  variations?: unknown;
+  price?: number | string;
+  originalPrice?: number | string | null;
+  isDiscounted?: boolean;
+  keepImageUrls?: unknown;
+};
+
 function normalizeCategory(value: unknown) {
   if (typeof value !== "string") return null;
   const next = value.trim();
   return next || null;
+}
+
+function requireString(value: unknown, message: string) {
+  if (typeof value !== "string") {
+    throw new Error(message);
+  }
+
+  const next = value.trim();
+  if (!next) {
+    throw new Error(message);
+  }
+
+  return next;
+}
+
+function requireNumber(value: unknown, message: string) {
+  const next = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(next)) {
+    throw new Error(message);
+  }
+
+  return next;
+}
+
+function normalizeDiscountValues(body: Record<string, unknown>) {
+  const isDiscounted = Boolean(body.isDiscounted);
+  const price =
+    typeof body.price === "number" ? body.price : Number(body.price);
+  const originalPrice =
+    body.originalPrice === undefined ||
+    body.originalPrice === null ||
+    body.originalPrice === ""
+      ? null
+      : Number(body.originalPrice);
+
+  if (!isDiscounted) {
+    return { isDiscounted: false, originalPrice: null, price };
+  }
+
+  if (!Number.isFinite(price) || !Number.isFinite(originalPrice || NaN)) {
+    throw new Error(
+      "Discounted products require valid original and discounted prices",
+    );
+  }
+
+  if ((originalPrice as number) <= price) {
+    throw new Error("Original price must be higher than discounted price");
+  }
+
+  return { isDiscounted: true, originalPrice, price };
 }
 
 // Helper function to process variations and upload images
@@ -54,6 +126,8 @@ async function processVariations(variations: VariationInput[]) {
 }
 
 export async function GET(req: NextRequest) {
+  await ensureProductDiscountColumns();
+
   const view = req.nextUrl.searchParams.get("view");
   const isRecycleBin = view === "recycle-bin";
   const products = await prisma.product.findMany({
@@ -64,23 +138,39 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const {
-    name,
-    description,
-    price,
-    stock,
-    category,
-    brand = "",
-    buyOneGetOneFree = false,
-  } = body;
+  await ensureProductDiscountColumns();
+
+  const body = (await req.json()) as AdminProductBody;
+  let name: string;
+  let description: string;
+  let stock: number;
+
+  try {
+    name = requireString(body.name, "Name is required");
+    description = requireString(body.description, "Description is required");
+    stock = requireNumber(body.stock, "Stock is required");
+  } catch (error) {
+    return Response.json(
+      {
+        message:
+          error instanceof Error ? error.message : "Invalid product data",
+      },
+      { status: 400 },
+    );
+  }
+
+  const category = body.category;
+  const brand = body.brand ?? "";
+  const buyOneGetOneFree = body.buyOneGetOneFree ?? false;
   const images: string[] = Array.isArray(body.images)
-    ? body.images
+    ? (body.images as string[])
     : body.image
-      ? [body.image]
+      ? [body.image as string]
       : [];
 
-  const rawVariations = Array.isArray(body.variations) ? body.variations : [];
+  const rawVariations = Array.isArray(body.variations)
+    ? (body.variations as VariationInput[])
+    : [];
 
   if (!images.length) {
     return Response.json(
@@ -90,24 +180,35 @@ export async function POST(req: Request) {
   }
 
   const uploads = await Promise.all(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    images.map((img: any) => cloudinary.uploader.upload(img)),
+    images.map((img) => cloudinary.uploader.upload(img)),
   );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const urls = uploads.map((u: any) => u.secure_url);
+  const urls = (uploads as CloudinaryUploadResult[]).map(
+    (upload) => upload.secure_url,
+  );
 
   // Process variations and upload any variation option images
   const processedVariations = await processVariations(rawVariations);
+  let discountValues;
+  try {
+    discountValues = normalizeDiscountValues(body);
+  } catch (error) {
+    return Response.json(
+      { message: error instanceof Error ? error.message : "Invalid discount" },
+      { status: 400 },
+    );
+  }
 
   const product = await prisma.product.create({
     data: {
       name,
       description,
-      price,
+      price: discountValues.price,
+      originalPrice: discountValues.originalPrice,
       stock,
       category: normalizeCategory(category),
       brand,
       buyOneGetOneFree,
+      isDiscounted: discountValues.isDiscounted,
       variations: processedVariations,
       imageUrl: urls[0],
       imageUrls: urls,
@@ -118,7 +219,9 @@ export async function POST(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  const body = await req.json();
+  await ensureProductDiscountColumns();
+
+  const body = (await req.json()) as AdminProductBody;
   const { id } = body;
 
   if (!id) {
@@ -136,24 +239,22 @@ export async function PUT(req: Request) {
   }
 
   const images: string[] = Array.isArray(body.images)
-    ? body.images
+    ? (body.images as string[])
     : body.image
-      ? [body.image]
+      ? [body.image as string]
       : [];
 
   const keepImageUrls: string[] | undefined = Array.isArray(body.keepImageUrls)
-    ? body.keepImageUrls.filter(Boolean)
+    ? (body.keepImageUrls as string[]).filter(Boolean)
     : undefined;
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   const uploads = images.length
-    ? await Promise.all(
-        images.map((img: any) => cloudinary.uploader.upload(img)),
-      )
+    ? await Promise.all(images.map((img) => cloudinary.uploader.upload(img)))
     : [];
 
-  const uploadedUrls = uploads.map((u: any) => u.secure_url);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
+  const uploadedUrls = (uploads as CloudinaryUploadResult[]).map(
+    (upload) => upload.secure_url,
+  );
 
   const nextImageUrls = keepImageUrls ?? existing.imageUrls ?? [];
   const mergedImageUrls = [...nextImageUrls, ...uploadedUrls];
@@ -173,12 +274,34 @@ export async function PUT(req: Request) {
     processedVariations = await processVariations(body.variations);
   }
 
+  let discountValues;
+  try {
+    discountValues = normalizeDiscountValues({
+      ...body,
+      price: body.price ?? existing.price,
+      originalPrice:
+        body.originalPrice === undefined
+          ? existing.originalPrice
+          : body.originalPrice,
+      isDiscounted:
+        body.isDiscounted === undefined
+          ? existing.isDiscounted
+          : body.isDiscounted,
+    });
+  } catch (error) {
+    return Response.json(
+      { message: error instanceof Error ? error.message : "Invalid discount" },
+      { status: 400 },
+    );
+  }
+
   const product = await prisma.product.update({
     where: { id },
     data: {
       name: body.name ?? existing.name,
       description: body.description ?? existing.description,
-      price: body.price ?? existing.price,
+      price: discountValues.price,
+      originalPrice: discountValues.originalPrice,
       stock: body.stock ?? existing.stock,
       category:
         body.category !== undefined
@@ -189,6 +312,7 @@ export async function PUT(req: Request) {
         body.buyOneGetOneFree !== undefined
           ? body.buyOneGetOneFree
           : existing.buyOneGetOneFree,
+      isDiscounted: discountValues.isDiscounted,
       variations: (processedVariations ?? []) as Prisma.InputJsonValue,
       imageUrl,
       imageUrls: mergedImageUrls,

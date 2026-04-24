@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Container from "@/components/Container";
 import Button from "@/components/Button";
+import { buildInternalHref, resolveReturnHref } from "@/lib/navigation";
+import PriceDisplay from "@/components/PriceDisplay";
 import { useSession } from "next-auth/react";
 import { RawOption } from "@/lib/types";
 
@@ -14,6 +16,8 @@ interface Product {
   name: string;
   description: string;
   price: number;
+  originalPrice?: number | null;
+  isDiscounted?: boolean | null;
   stock: number;
   category?: string;
   brand?: string;
@@ -61,6 +65,7 @@ interface Bundle {
 
 export default function ProductDetail() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { status } = useSession();
   const [product, setProduct] = useState<Product | null>(null);
@@ -502,13 +507,14 @@ export default function ProductDetail() {
   const allVariationsSelected = (product.variations || []).every(
     (v) => selectedVariations[v.name],
   );
+  const returnHref = resolveReturnHref(searchParams.get("returnTo"), "/shop");
 
   return (
     <div className="min-h-screen py-12">
       <Container>
         <div className="mb-6">
           <Link
-            href="/shop"
+            href={returnHref}
             className="text-sm font-semibold text-[#1f4b99] hover:text-[#163a79]"
           >
             ← Back to shop
@@ -566,14 +572,20 @@ export default function ProductDetail() {
             <p className="text-slate-700 leading-relaxed text-base">
               {product.description}
             </p>
-            <p className="text-2xl font-semibold text-slate-900">
-              £{displayPrice.toFixed(2)}
-              {product.buyOneGetOneFree && (
-                <span className="ml-2 inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
-                  Buy 1 get 1 free
-                </span>
-              )}
-            </p>
+            <PriceDisplay
+              price={displayPrice}
+              originalPrice={product.originalPrice}
+              isDiscounted={product.isDiscounted}
+              containerClassName="items-end"
+              saleClassName="text-2xl font-semibold text-slate-900"
+              originalClassName="text-sm"
+              badgeClassName="text-[11px]"
+            />
+            {product.buyOneGetOneFree && (
+              <span className="mt-2 inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
+                Buy 1 get 1 free
+              </span>
+            )}
             <p className="text-slate-600 text-sm">In stock: {product.stock}</p>
 
             {product.variations && product.variations.length > 0 && (
@@ -1007,7 +1019,7 @@ export default function ProductDetail() {
                 More products
               </h3>
               <Link
-                href="/shop"
+                href={returnHref}
                 className="text-sm font-semibold text-[#1f4b99] hover:text-[#163a79]"
               >
                 View all →
@@ -1017,7 +1029,9 @@ export default function ProductDetail() {
               {moreProducts.map((item) => (
                 <Link
                   key={item.id}
-                  href={`/product/${item.id}`}
+                  href={buildInternalHref(`/product/${item.id}`, {
+                    returnTo: returnHref,
+                  })}
                   className="block bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all"
                   aria-label={`View ${item.name}`}
                 >

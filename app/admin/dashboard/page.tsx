@@ -3,7 +3,7 @@ import Link from "next/link";
 const actions = [
   {
     title: "Manage Products",
-    href: "/admin/products",
+    href: "/admin/products?tab=manage",
     desc: "Add, edit, and remove products",
     icon: "📦",
   },
@@ -64,6 +64,7 @@ export default function AdminDashboard() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className="rounded-2xl border border-slate-200 bg-white p-5 hover:border-[#1f4b99] transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <div className="text-3xl mb-3">{item.icon}</div>

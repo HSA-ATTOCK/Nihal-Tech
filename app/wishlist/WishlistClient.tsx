@@ -4,6 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Button from "@/components/Button";
+import { buildInternalHref } from "@/lib/navigation";
+import PriceDisplay from "@/components/PriceDisplay";
 
 type WishlistItem = {
   id: string;
@@ -11,6 +13,8 @@ type WishlistItem = {
     id: string;
     name: string;
     price: number;
+    originalPrice?: number | null;
+    isDiscounted?: boolean | null;
     imageUrl?: string;
     imageUrls?: string[];
   };
@@ -84,9 +88,14 @@ export default function WishlistClient({
             <h3 className="font-semibold text-slate-900 text-sm line-clamp-2">
               {item.product.name}
             </h3>
-            <p className="text-[#1f4b99] font-semibold text-base mt-1">
-              £{item.product.price}
-            </p>
+            <PriceDisplay
+              price={item.product.price}
+              originalPrice={item.product.originalPrice}
+              isDiscounted={item.product.isDiscounted}
+              containerClassName="mt-1 items-baseline"
+              saleClassName="text-[#1f4b99] font-semibold text-base"
+              originalClassName="text-[11px]"
+            />
             <div className="mt-auto pt-3 flex flex-col gap-2">
               <Button
                 onClick={() => handleRemove(item.product.id)}
@@ -96,7 +105,9 @@ export default function WishlistClient({
                 {removing[item.product.id] ? "Removing..." : "Remove"}
               </Button>
               <Link
-                href={`/product/${item.product.id}`}
+                href={buildInternalHref(`/product/${item.product.id}`, {
+                  returnTo: "/wishlist",
+                })}
                 className="w-full text-center rounded-lg border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:border-[#1f4b99]"
               >
                 View product
