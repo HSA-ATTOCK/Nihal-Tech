@@ -31,9 +31,7 @@ export function getDiscountInfo({
 
   const original = normalizedOriginalPrice as number;
 
-  const discountPercent = Math.round(
-    ((original - salePrice) / original) * 100,
-  );
+  const discountPercent = Math.round(((original - salePrice) / original) * 100);
 
   return {
     salePrice,
