@@ -248,31 +248,33 @@ function VariationFields({ values, onChange, idPrefix }: VariationFieldsProps) {
   );
 }
 
+function parseAdminProductsQuery(search: string): {
+  nextTab: "add" | "manage";
+  nextSearch: string;
+  nextPage: number;
+  hasPageParam: boolean;
+} {
+  const params = new URLSearchParams(search);
+  const nextTab = params.get("tab") === "add" ? "add" : "manage";
+  const nextSearch = params.get("q") || "";
+  const nextPage = Math.max(1, Number(params.get("page") || "1") || 1);
+
+  return {
+    nextTab,
+    nextSearch,
+    nextPage,
+    hasPageParam: params.has("page"),
+  };
+}
+
 export default function AdminProducts() {
   const pathname = usePathname();
   const router = useRouter();
-  const readQuery = (
-    search: string,
-  ): {
-    nextTab: "add" | "manage";
-    nextSearch: string;
-    nextPage: number;
-    hasPageParam: boolean;
-  } => {
-    const params = new URLSearchParams(search);
-    const nextTab = params.get("tab") === "add" ? "add" : "manage";
-    const nextSearch = params.get("q") || "";
-    const nextPage = Math.max(1, Number(params.get("page") || "1") || 1);
-    return {
-      nextTab,
-      nextSearch,
-      nextPage,
-      hasPageParam: params.has("page"),
-    };
-  };
 
   const initialQuery =
-    typeof window !== "undefined" ? readQuery(window.location.search) : null;
+    typeof window !== "undefined"
+      ? parseAdminProductsQuery(window.location.search)
+      : null;
 
   const [tab, setTab] = useState<"add" | "manage">(
     initialQuery?.nextTab ?? "manage",
@@ -341,23 +343,22 @@ export default function AdminProducts() {
 
   useEffect(() => {
     const syncFromLocation = () => {
-      const { nextTab, nextSearch, nextPage, hasPageParam } = readQuery(
-        window.location.search,
-      );
+      const { nextTab, nextSearch, nextPage, hasPageParam } =
+        parseAdminProductsQuery(window.location.search);
       const restoredPage =
         nextTab === "manage" && !hasPageParam && lastManagePageRef.current > 1
           ? lastManagePageRef.current
           : nextPage;
 
-      if (tab !== nextTab) setTab(nextTab);
-      if (productSearch !== nextSearch) setProductSearch(nextSearch);
-      if (managePage !== restoredPage) setManagePage(restoredPage);
+      setTab((prev) => (prev === nextTab ? prev : nextTab));
+      setProductSearch((prev) => (prev === nextSearch ? prev : nextSearch));
+      setManagePage((prev) => (prev === restoredPage ? prev : restoredPage));
     };
 
     syncFromLocation();
     window.addEventListener("popstate", syncFromLocation);
     return () => window.removeEventListener("popstate", syncFromLocation);
-  }, [managePage, productSearch, tab]);
+  }, []);
 
   useEffect(() => {
     if (tab === "manage" && managePage > 1) {
