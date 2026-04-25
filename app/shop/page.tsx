@@ -67,15 +67,8 @@ function ShopContent() {
     setSortBy((prev) => (prev === nextSort ? prev : nextSort));
     setCurrentPage((prev) => (prev === nextPage ? prev : nextPage));
 
-    const matchedCategory = categories.find(
-      (category) => category.key.toLowerCase() === nextCategory.toLowerCase(),
-    );
-    const normalizedCategory = matchedCategory?.key || nextCategory;
-
-    setActiveCategory((prev) =>
-      prev === normalizedCategory ? prev : normalizedCategory,
-    );
-  }, [categories, searchParams]);
+    setActiveCategory((prev) => (prev === nextCategory ? prev : nextCategory));
+  }, [searchParams]);
 
   useEffect(() => {
     const nextUrl = buildInternalHref(pathname, {
@@ -84,22 +77,15 @@ function ShopContent() {
       sort: sortBy !== "default" ? sortBy : undefined,
       page: currentPage > 1 ? currentPage : undefined,
     });
-    const currentUrl = searchParams.toString()
-      ? `${pathname}?${searchParams.toString()}`
-      : pathname;
+    const currentUrl =
+      typeof window !== "undefined" && window.location.search
+        ? `${pathname}${window.location.search}`
+        : pathname;
 
     if (nextUrl !== currentUrl) {
       router.replace(nextUrl, { scroll: false });
     }
-  }, [
-    activeCategory,
-    currentPage,
-    pathname,
-    router,
-    search,
-    searchParams,
-    sortBy,
-  ]);
+  }, [activeCategory, currentPage, pathname, router, search, sortBy]);
 
   useEffect(() => {
     fetch("/api/categories")
