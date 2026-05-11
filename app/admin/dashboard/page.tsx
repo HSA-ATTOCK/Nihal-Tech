@@ -43,6 +43,12 @@ const actions = [
     desc: "View and respond to customer messages",
     icon: "💬",
   },
+  {
+    title: "Visitors",
+    href: "/admin/visitors",
+    desc: "See visitor logs and page visits",
+    icon: "📈",
+  },
 ];
 
 export default function AdminDashboard() {

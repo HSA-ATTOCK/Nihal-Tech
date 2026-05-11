@@ -299,3 +299,19 @@ model ChatMessage {
   isRead         Boolean          @default(false)
   createdAt      DateTime         @default(now())
 }
+
+model Visitor {
+  id        String   @id @default(uuid())
+  visitorKey String?  @unique
+  ip        String?  @default("")
+  path      String   @default("")
+  userAgent String?  @default("")
+  referrer  String?  @default("")
+  lang      String?  @default("")
+  firstSeenAt DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([firstSeenAt])
+}
