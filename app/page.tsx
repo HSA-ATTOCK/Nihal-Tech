@@ -122,7 +122,7 @@ export default function Home() {
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-xs text-slate-500">Avg repair time</p>
-                    <p className="text-3xl font-bold text-slate-900">22h</p>
+                    <p className="text-3xl font-bold text-slate-900">1-2 hrs</p>
                     <p className="text-xs text-slate-500">Door-to-door</p>
                   </div>
                 </div>

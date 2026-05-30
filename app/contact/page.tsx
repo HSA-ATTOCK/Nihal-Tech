@@ -193,8 +193,7 @@ export default function ContactPage() {
               </p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-              Hours: Monday to Saturday, 9:00-18:30 UK time. We aim to respond
-              within one business day.
+              Hours: 24/7. We aim to respond within 1-2 hours.
             </div>
           </div>
         </div>
