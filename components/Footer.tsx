@@ -149,7 +149,7 @@ export default function Footer() {
         <div className="flex flex-col gap-3 pb-8 sm:pb-10 text-sm text-slate-500 text-center">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <p>© {new Date().getFullYear()} Nihal Tech. All rights reserved.</p>
-            <p>Response hours: Mon–Sat, 9:00–18:30 UK time</p>
+            <p>Response hours: 24/7</p>
           </div>
           <div className="border-t border-slate-200 pt-3">
             <p>
