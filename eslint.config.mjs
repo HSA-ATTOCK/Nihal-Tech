@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // mobile-app is a separate Expo/React Native project with its own
+    // package.json, tsconfig, and lint setup - lint it via
+    // `cd mobile-app && npm run lint`, not from the website's root.
+    "mobile-app/**",
   ]),
 ]);
 
