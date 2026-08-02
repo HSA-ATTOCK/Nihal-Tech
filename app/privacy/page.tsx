@@ -33,7 +33,7 @@ export default function PrivacyPage() {
             </p>
             <p>
               You can request access, correction, or deletion of your personal
-              data by contacting support@nihaltech.com.
+              data by contacting info@nihaltech.co.uk.
             </p>
           </div>
         </div>

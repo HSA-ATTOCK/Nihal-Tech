@@ -31,7 +31,7 @@ export default function TermsPage() {
               canceled up to 24 hours before the appointment.
             </p>
             <p>
-              For any concerns or clarifications, contact support@nihaltech.com.
+              For any concerns or clarifications, contact info@nihaltech.co.uk.
             </p>
           </div>
         </div>

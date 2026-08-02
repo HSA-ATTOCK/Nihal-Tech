@@ -44,3 +44,6 @@ next-env.d.ts
 tmpclaude-*
 tmp*.js
 tmp-*.json
+
+# appfolder
+/mobile-app/
